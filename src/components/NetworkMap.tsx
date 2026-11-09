@@ -6,7 +6,14 @@ import type { Network } from "@/lib/network.types";
 maplibregl.setWorkerUrl(workerUrl);
 
 function cssVar(name: string) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  // MapLibre does not parse oklch(); resolve the token to rgb via a 1px canvas.
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!raw || !ctx) return "";
+  ctx.fillStyle = raw;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
 function lineFeatures(path: number[], net: Network) {
