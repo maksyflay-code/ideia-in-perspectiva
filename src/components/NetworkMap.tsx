@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
@@ -68,17 +68,25 @@ function buildData(net: Network, channelId: number | null) {
 export default function NetworkMap({ network, channelId }: { network: Network; channelId: number | null }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const latest = useRef({ network, channelId });
   latest.current = { network, channelId };
 
   useEffect(() => {
     if (!el.current) return;
-    const m = new maplibregl.Map({
-      container: el.current,
-      style: "https://tiles.openfreemap.org/styles/dark",
-      center: [-40, -13],
-      zoom: 5.5,
-    });
+    let m: maplibregl.Map;
+    try {
+      m = new maplibregl.Map({
+        container: el.current,
+        style: "https://tiles.openfreemap.org/styles/dark",
+        center: [-40, -13],
+        zoom: 5.5,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    m.on("error", (e) => console.error("Mapa:", e.error));
     map.current = m;
     m.addControl(new maplibregl.NavigationControl(), "top-right");
     m.on("load", () => {
@@ -128,6 +136,16 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
     fit(m, network, channelId);
   }, [network, channelId]);
 
+  if (error)
+    return (
+      <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
+        <div>
+          <p className="mb-2 font-semibold text-foreground">Não foi possível desenhar o mapa neste navegador.</p>
+          <p>Verifique se a "aceleração de hardware" (WebGL) está ativada no navegador.</p>
+          <p className="mt-2 font-mono text-xs">{error}</p>
+        </div>
+      </div>
+    );
   return <div ref={el} className="h-full w-full" />;
 }
 
