@@ -136,3 +136,10 @@ export const deleteItem = createServerFn({ method: "POST" })
     d.prepare(`DELETE FROM ${data.kind} WHERE id=?`).run(data.id);
     return { ok: true };
   });
+
+export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const d = await db();
+  const names = (d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name);
+  const z = await import("@/server/zabbix.server");
+  return z.getStatus(names);
+});
