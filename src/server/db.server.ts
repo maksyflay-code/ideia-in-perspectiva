@@ -20,7 +20,7 @@ async function open(): Promise<Db> {
     DatabaseSync: new (path: string) => Db;
   };
   const fs = (await import(/* @vite-ignore */ "node:fs")) as typeof import("node:fs");
-  const path = process.env.DATABASE_PATH || "./data/mapa.db";
+  const path = process.env["DATABASE_PATH"] || "./data/mapa.db";
   const dir = path.substring(0, path.lastIndexOf("/"));
   if (dir) fs.mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(path);
@@ -51,7 +51,7 @@ async function open(): Promise<Db> {
     );
   `);
   const count = (db.prepare("SELECT COUNT(*) AS n FROM pops").get() as { n: number }).n;
-  if (count === 0 && process.env.SEED_DEMO !== "0") seed(db);
+  if (count === 0 && process.env["SEED_DEMO"] !== "0") seed(db);
   return db;
 }
 

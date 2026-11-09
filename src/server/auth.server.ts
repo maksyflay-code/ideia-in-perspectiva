@@ -4,7 +4,7 @@ const COOKIE = "mapa_admin";
 const MAX_AGE = 60 * 60 * 12; // 12h
 
 function secret() {
-  return process.env.SESSION_SECRET || "troque-este-segredo";
+  return process.env["SESSION_SECRET"] || "troque-este-segredo";
 }
 
 async function hmac(data: string) {
@@ -27,8 +27,8 @@ function safeEqual(a: string, b: string) {
 }
 
 export function checkCredentials(user: string, pass: string) {
-  const u = process.env.ADMIN_USER || "admin";
-  const p = process.env.ADMIN_PASSWORD || "admin";
+  const u = process.env["ADMIN_USER"] || "admin";
+  const p = process.env["ADMIN_PASSWORD"] || "admin";
   return safeEqual(user, u) && safeEqual(pass, p);
 }
 
@@ -40,7 +40,7 @@ export async function startSession(user: string) {
     sameSite: "lax",
     path: "/",
     maxAge: MAX_AGE,
-    secure: process.env.COOKIE_SECURE === "1",
+    secure: process.env["COOKIE_SECURE"] === "1",
   });
 }
 
@@ -53,7 +53,7 @@ export async function currentAdmin(): Promise<string | null> {
   if (!raw) return null;
   const parts = raw.split(".");
   if (parts.length !== 3) return null;
-  const [user, exp, sig] = parts;
+  const [user = "", exp = "", sig = ""] = parts;
   if (Number(exp) < Date.now()) return null;
   if (!safeEqual(sig, await hmac(`${user}.${exp}`))) return null;
   return user;

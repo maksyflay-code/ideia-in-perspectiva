@@ -225,7 +225,7 @@ function PopsTab({ net, onChange }: { net: Network; onChange: () => void }) {
   );
 }
 
-function PopSelect({ name, net, value }: { name: string; net: Network; value?: number }) {
+function PopSelect({ name, net, value }: { name: string; net: Network; value?: number | undefined }) {
   return (
     <select name={name} defaultValue={value ?? ""} className={input} required>
       <option value="" disabled>Selecione…</option>
@@ -244,7 +244,10 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
     const f = new FormData(form);
     const from = Number(f.get("from"));
     const to = Number(f.get("to"));
-    if (from === to) return s.run(async () => { throw new Error("Origem e destino devem ser diferentes"); });
+    if (from === to) {
+      await s.run(async () => { throw new Error("Origem e destino devem ser diferentes"); });
+      return;
+    }
     const ok = await s.run(() =>
       saveLink({
         data: {
@@ -350,7 +353,10 @@ function ChannelsTab({ net, onChange }: { net: Network; onChange: () => void }) 
   }
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (primary.length < 2) return s.run(async () => { throw new Error("A rota principal precisa de pelo menos 2 POPs"); });
+    if (primary.length < 2) {
+      await s.run(async () => { throw new Error("A rota principal precisa de pelo menos 2 POPs"); });
+      return;
+    }
     const ok = await s.run(() => saveChannel({ data: { id: edit?.id, name: nameV, primary_path: primary, secondary_path: secondary } }));
     if (ok) load(null);
   }

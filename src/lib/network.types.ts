@@ -18,8 +18,8 @@ export type Network = { pops: Pop[]; links: Link[]; channels: Channel[] };
 export function pathDistance(path: number[], links: Link[]) {
   let total = 0;
   for (let i = 0; i < path.length - 1; i++) {
-    const a = path[i];
-    const b = path[i + 1];
+    const a = path[i]!;
+    const b = path[i + 1]!;
     const l = links.find(
       (x) => (x.from_pop === a && x.to_pop === b) || (x.from_pop === b && x.to_pop === a),
     );
@@ -32,8 +32,8 @@ export function pathDistance(path: number[], links: Link[]) {
 export function missingHops(path: number[], links: Link[]) {
   const out: [number, number][] = [];
   for (let i = 0; i < path.length - 1; i++) {
-    const a = path[i];
-    const b = path[i + 1];
+    const a = path[i]!;
+    const b = path[i + 1]!;
     const ok = links.some(
       (x) => (x.from_pop === a && x.to_pop === b) || (x.from_pop === b && x.to_pop === a),
     );

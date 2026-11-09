@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import maplibregl from "maplibre-gl";
+import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
 
@@ -93,11 +93,11 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
         layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.4], "text-anchor": "top" },
         paint: { "text-color": "#e2e8f0", "text-halo-color": "#0f172a", "text-halo-width": 1.5 },
       });
-      m.on("click", "pops", (e) => {
+      m.on("click", "pops", (e: maplibregl.MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
         const p = f.properties as { name: string; city: string };
-        const coords = (f.geometry as GeoJSON.Point).coordinates as [number, number];
+        const coords = (f.geometry as { coordinates: number[] }).coordinates as [number, number];
         new maplibregl.Popup({ offset: 12 })
           .setLngLat(coords)
           .setHTML(`<strong>${escapeHtml(p.name)}</strong><br/><span style="opacity:.7">${escapeHtml(p.city)}</span>`)
