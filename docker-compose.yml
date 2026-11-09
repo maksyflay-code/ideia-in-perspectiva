@@ -9,6 +9,9 @@ services:
       ADMIN_USER: admin
       ADMIN_PASSWORD: troque-esta-senha
       SESSION_SECRET: troque-por-um-texto-longo-e-aleatorio
+      ZABBIX_URL: https://zabbix.ivitelecom.com.br
+      ZABBIX_USER: monitoramento
+      ZABBIX_PASSWORD: coloque-a-senha-aqui
       SEED_DEMO: "1" # use "0" para começar com o banco vazio
       # COOKIE_SECURE: "1" # ative se usar HTTPS
     volumes:

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useState } from "react";
-import { networkQuery } from "@/lib/network.queries";
+import { networkQuery, zabbixQuery } from "@/lib/network.queries";
 import { pathDistance } from "@/lib/network.types";
 
 const NetworkMap = lazy(() => import("@/components/NetworkMap"));
@@ -24,6 +24,9 @@ export const Route = createFileRoute("/")({
 function MapPage() {
   const { data: net } = useSuspenseQuery(networkQuery);
   const [channelId, setChannelId] = useState<number | null>(null);
+  const { data: zbx } = useQuery(zabbixQuery);
+  const zc = { ok: 0, warn: 0, down: 0, unknown: 0 };
+  if (zbx?.enabled) for (const p of net.pops) zc[zbx.byName[p.name]?.state ?? "unknown"]++;
   const ch = net.channels.find((c) => c.id === channelId);
   const name = (id: number) => net.pops.find((p) => p.id === id)?.name ?? "?";
 
@@ -41,6 +44,20 @@ function MapPage() {
             Admin →
           </Link>
         </header>
+        {zbx?.enabled && (
+          <div className="border-b px-4 py-2 text-xs">
+            {zbx.error ? (
+              <p className="text-destructive">Zabbix indisponível: {zbx.error}</p>
+            ) : (
+              <p className="flex flex-wrap gap-3 text-muted-foreground">
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-online" />{zc.ok} ok</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-standby" />{zc.warn} alerta</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-destructive" />{zc.down} crítico</span>
+                <span><span className="mr-1 inline-block h-2 w-2 rounded-full bg-muted-foreground" />{zc.unknown} sem host</span>
+              </p>
+            )}
+          </div>
+        )}
         <div className="flex-1 overflow-auto p-3">
           <p className="mb-2 px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Canais</p>
           <button
@@ -83,7 +100,7 @@ function MapPage() {
       <main className="relative min-h-[60vh] flex-1">
         <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
           <Suspense fallback={<div className="h-full w-full bg-muted" />}>
-            <NetworkMap network={net} channelId={channelId} />
+            <NetworkMap network={net} channelId={channelId} zabbix={zbx} />
           </Suspense>
         </ClientOnly>
       </main>
