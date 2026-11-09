@@ -1,0 +1,15 @@
+services:
+  mapa-dwdm:
+    build: .
+    container_name: mapa-dwdm
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: troque-esta-senha
+      SESSION_SECRET: troque-por-um-texto-longo-e-aleatorio
+      SEED_DEMO: "1" # use "0" para começar com o banco vazio
+      # COOKIE_SECURE: "1" # ative se usar HTTPS
+    volumes:
+      - ./data:/data
