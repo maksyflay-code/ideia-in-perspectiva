@@ -143,3 +143,24 @@ export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async (
   const z = await import("@/server/zabbix.server");
   return z.getStatus(names);
 });
+
+export const PENDING_NOTE = "Localização pendente — ajuste latitude/longitude";
+
+export const importZabbixHosts = createServerFn({ method: "POST" })
+  .inputValidator(z.object({ prefix: z.string().max(50).default("sw-") }))
+  .handler(async ({ data }) => {
+    await (await auth()).requireAdmin();
+    const d = await db();
+    const hosts = await (await import("@/server/zabbix.server")).listHosts(data.prefix);
+    const existing = new Set((d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name));
+    const ins = d.prepare("INSERT INTO pops (name, city, lat, lng, notes) VALUES (?,?,?,?,?)");
+    let added = 0;
+    for (const h of hosts) {
+      if (existing.has(h.host)) continue;
+      const city = h.host.replace(/^sw-/i, "").replace(/[-_]+/g, " ").toUpperCase();
+      const hasLoc = h.lat !== null && h.lng !== null;
+      ins.run(h.host, city, hasLoc ? h.lat : -12.97, hasLoc ? h.lng : -38.51, hasLoc ? "" : PENDING_NOTE);
+      added++;
+    }
+    return { found: hosts.length, added };
+  });

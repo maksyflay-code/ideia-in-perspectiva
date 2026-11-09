@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { deleteItem, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 
 export const Route = createFileRoute("/admin")({
@@ -201,6 +201,7 @@ function PopsTab({ net, onChange }: { net: Network; onChange: () => void }) {
             {edit && <button type="button" className={ghost} onClick={() => setEdit(null)}>Cancelar</button>}
           </div>
           <p className="text-xs text-muted-foreground">Dica: copie as coordenadas clicando com o botão direito no Google Maps.</p>
+          <ZabbixImport onChange={onChange} />
         </form>
       }
       list={
@@ -209,7 +210,10 @@ function PopsTab({ net, onChange }: { net: Network; onChange: () => void }) {
           <tbody>
             {net.pops.map((p) => (
               <tr key={p.id}>
-                <td className={`${td} font-mono`}>{p.name}</td>
+                <td className={`${td} font-mono`}>
+                  {p.name}
+                  {p.notes === PENDING_NOTE && <span className="ml-2 rounded bg-standby/20 px-1.5 py-0.5 font-sans text-[10px] text-standby">sem localização</span>}
+                </td>
                 <td className={td}>{p.city}</td>
                 <td className={`${td} font-mono text-xs text-muted-foreground`}>{p.lat}, {p.lng}</td>
                 <td className={`${td} space-x-3 text-right`}>
@@ -222,6 +226,38 @@ function PopsTab({ net, onChange }: { net: Network; onChange: () => void }) {
         </table>
       }
     />
+  );
+}
+
+function ZabbixImport({ onChange }: { onChange: () => void }) {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="space-y-2 border-t pt-3">
+      <p className="text-xs font-semibold">Importar do Zabbix</p>
+      <p className="text-xs text-muted-foreground">Cria um POP para cada switch (sw-…) que ainda não está cadastrado. Depois edite a latitude/longitude de cada um.</p>
+      <button
+        type="button"
+        className={ghost}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setMsg("");
+          try {
+            const r = await importZabbixHosts({ data: { prefix: "sw-" } });
+            setMsg(`${r.found} switches no Zabbix · ${r.added} novos cadastrados`);
+            onChange();
+          } catch (e) {
+            setMsg(e instanceof Error ? e.message : "Erro ao importar");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Importando…" : "Importar switches"}
+      </button>
+      {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
+    </div>
   );
 }
 
