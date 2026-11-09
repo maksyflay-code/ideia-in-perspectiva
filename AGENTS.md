@@ -33,3 +33,4 @@ use the editor.
 - Self-hosted on a Proxmox VM via Docker (NITRO_PRESET=node-server); never depend on Lovable Cloud or other hosted backends.
 - Storage is SQLite via Node's built-in `node:sqlite` in `src/server/db.server.ts`, imported dynamically so the Worker bundle never resolves it; schema is created with CREATE TABLE IF NOT EXISTS on startup.
 - Admin auth is a single env-configured user (ADMIN_USER/ADMIN_PASSWORD) with an HMAC-signed httpOnly cookie; every mutating server function must call requireAdmin().
+- Zabbix integration is read-only via JSON-RPC in `src/server/zabbix.server.ts`, configured by ZABBIX_URL/ZABBIX_USER/ZABBIX_PASSWORD env; POP name must equal Zabbix technical host name. Why: no credentials in code, matching by name avoids extra mapping.

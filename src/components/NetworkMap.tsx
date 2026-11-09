@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
+import type { ZabbixStatus } from "@/server/zabbix.server";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -30,7 +31,7 @@ function lineFeatures(path: number[], net: Network) {
   };
 }
 
-function buildData(net: Network, channelId: number | null) {
+function buildData(net: Network, channelId: number | null, z?: ZabbixStatus) {
   const byId = new Map(net.pops.map((p) => [p.id, p]));
   const links = {
     type: "FeatureCollection" as const,
@@ -52,7 +53,13 @@ function buildData(net: Network, channelId: number | null) {
     type: "FeatureCollection" as const,
     features: net.pops.map((p) => ({
       type: "Feature" as const,
-      properties: { id: p.id, name: p.name, city: p.city },
+      properties: {
+        id: p.id,
+        name: p.name,
+        city: p.city,
+        state: z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none",
+        problems: JSON.stringify(z?.byName[p.name]?.problems.slice(0, 5) ?? []),
+      },
       geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
     })),
   };
@@ -65,12 +72,20 @@ function buildData(net: Network, channelId: number | null) {
   };
 }
 
-export default function NetworkMap({ network, channelId }: { network: Network; channelId: number | null }) {
+export default function NetworkMap({
+  network,
+  channelId,
+  zabbix,
+}: {
+  network: Network;
+  channelId: number | null;
+  zabbix?: ZabbixStatus | undefined;
+}) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const latest = useRef({ network, channelId });
-  latest.current = { network, channelId };
+  const latest = useRef({ network, channelId, zabbix });
+  latest.current = { network, channelId, zabbix };
 
   useEffect(() => {
     if (!el.current) return;
@@ -92,7 +107,9 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
     m.on("load", () => {
       const signal = cssVar("--signal") || "#38bdf8";
       const standby = cssVar("--standby") || "#f59e0b";
-      const d = buildData(latest.current.network, latest.current.channelId);
+      const online = cssVar("--online") || "#22c55e";
+      const down = cssVar("--destructive") || "#ef4444";
+      const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
       m.addSource("primary", { type: "geojson", data: d.primary });
@@ -100,7 +117,7 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": "#64748b", "line-width": 2, "line-opacity": 0.7 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": signal, "circle-stroke-color": "#0f172a", "circle-stroke-width": 3 } });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", "#64748b", signal], "circle-stroke-color": "#0f172a", "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
@@ -111,11 +128,14 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
       m.on("click", "pops", (e: maplibregl.MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
-        const p = f.properties as { name: string; city: string };
+        const p = f.properties as { name: string; city: string; state: string; problems: string };
+        const probs = JSON.parse(p.problems || "[]") as { name: string; severity: number }[];
+        const label: Record<string, string> = { ok: "Zabbix: sem alertas", warn: "Zabbix: alerta", down: "Zabbix: crítico", unknown: "Zabbix: host não encontrado" };
+        const extra = (label[p.state] ? `<br/><em>${label[p.state]}</em>` : "") + probs.map((x) => `<br/>• ${escapeHtml(x.name)}`).join("");
         const coords = (f.geometry as { coordinates: number[] }).coordinates as [number, number];
         new maplibregl.Popup({ offset: 12 })
           .setLngLat(coords)
-          .setHTML(`<strong>${escapeHtml(p.name)}</strong><br/><span style="opacity:.7">${escapeHtml(p.city)}</span>`)
+          .setHTML(`<strong>${escapeHtml(p.name)}</strong><br/><span style="opacity:.7">${escapeHtml(p.city)}</span>${extra}`)
           .addTo(m);
       });
       m.on("mouseenter", "pops", () => (m.getCanvas().style.cursor = "pointer"));
@@ -128,13 +148,19 @@ export default function NetworkMap({ network, channelId }: { network: Network; c
   useEffect(() => {
     const m = map.current;
     if (!m || !m.isStyleLoaded() || !m.getSource("pops")) return;
-    const d = buildData(network, channelId);
+    const d = buildData(network, channelId, zabbix);
     (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
     (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
     (m.getSource("primary") as maplibregl.GeoJSONSource).setData(d.primary);
     (m.getSource("secondary") as maplibregl.GeoJSONSource).setData(d.secondary);
     fit(m, network, channelId);
   }, [network, channelId]);
+
+  useEffect(() => {
+    const m = map.current;
+    if (!m || !m.isStyleLoaded() || !m.getSource("pops")) return;
+    (m.getSource("pops") as maplibregl.GeoJSONSource).setData(buildData(network, channelId, zabbix).pops);
+  }, [zabbix]);
 
   if (error)
     return (

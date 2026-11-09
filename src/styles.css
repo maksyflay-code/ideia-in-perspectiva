@@ -33,6 +33,7 @@
   --color-ring: var(--ring);
   --color-signal: var(--signal);
   --color-standby: var(--standby);
+  --color-online: var(--online);
 }
 
 /* NOC theme: deep slate with fiber-cyan signal and amber standby */
@@ -59,6 +60,7 @@
   --ring: oklch(0.78 0.14 210);
   --signal: oklch(0.78 0.14 210);
   --standby: oklch(0.8 0.15 75);
+  --online: oklch(0.75 0.17 150);
 }
 
 @layer base {
