@@ -86,3 +86,19 @@ export async function getStatus(names: string[]): Promise<ZabbixStatus> {
     return { enabled: true, error: e instanceof Error ? e.message : String(e), byName: {} };
   }
 }
+
+export async function listHosts(prefix: string) {
+  const c = cfg();
+  if (!c) throw new Error("Zabbix não configurado (ZABBIX_URL/ZABBIX_USER/ZABBIX_PASSWORD)");
+  const hosts = (await call(c, "host.get", {
+    output: ["host"],
+    selectInventory: ["location_lat", "location_lon"],
+    ...(prefix ? { search: { host: prefix }, startSearch: true } : {}),
+  })) as { host: string; inventory: { location_lat?: string; location_lon?: string } | [] }[];
+  return hosts.map((h) => {
+    const inv = Array.isArray(h.inventory) ? {} : h.inventory;
+    const lat = Number(inv.location_lat);
+    const lng = Number(inv.location_lon);
+    return { host: h.host, lat: inv.location_lat && !isNaN(lat) ? lat : null, lng: inv.location_lon && !isNaN(lng) ? lng : null };
+  });
+}
