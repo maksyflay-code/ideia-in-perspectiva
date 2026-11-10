@@ -184,7 +184,7 @@ export default function NetworkMap({
         const labels = { up: "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento da porta" };
         const message = current.zabbix?.byLink?.[String(id)]?.message;
         new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat)
-          .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);
+          .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message && message !== labels[state] ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);
       };
       m.on("click", "links", showLink);
       m.on("mouseenter", "links", () => (m.getCanvas().style.cursor = "pointer"));
@@ -212,7 +212,9 @@ export default function NetworkMap({
       m.on("mouseleave", "pops", () => (m.getCanvas().style.cursor = ""));
       m.on("moveend", () => {
         const current = latest.current;
-        (m.getSource("pops") as maplibregl.GeoJSONSource).setData(buildData(current.network, current.channelId, current.zabbix, m).pops);
+        const d = buildData(current.network, current.channelId, current.zabbix, m);
+        (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
+        (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
       });
       fit(m, latest.current.network, latest.current.channelId);
       updateMotion();
@@ -226,7 +228,7 @@ export default function NetworkMap({
 
   useEffect(() => {
     const m = map.current;
-    if (!m || !m.isStyleLoaded() || !m.getSource("pops")) return;
+    if (!m || !m.getSource("pops") || !m.getSource("links")) return;
     const d = buildData(network, channelId, zabbix, m);
     (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
     (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
@@ -237,7 +239,7 @@ export default function NetworkMap({
 
   useEffect(() => {
     const m = map.current;
-    if (!m || !m.isStyleLoaded() || !m.getSource("pops")) return;
+    if (!m || !m.getSource("pops") || !m.getSource("links")) return;
     const d = buildData(network, channelId, zabbix, m);
     (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
     (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
