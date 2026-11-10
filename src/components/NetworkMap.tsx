@@ -4,6 +4,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
 import type { ZabbixStatus } from "@/server/zabbix.server";
 import { linkVisualState } from "@/lib/link-status";
+import { displayPositions, isDwdmLink } from "@/lib/map-layout";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -18,10 +19,9 @@ function cssVar(name: string) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function lineFeatures(path: number[], net: Network) {
+function lineFeatures(path: number[], positions: Map<number, [number, number]>) {
   const coords = path
-    .map((id) => net.pops.find((p) => p.id === id))
-    .flatMap((p) => p ? [[p.lng, p.lat]] : []);
+    .flatMap((id) => { const p = positions.get(id); return p ? [p] : []; });
   return {
     type: "FeatureCollection" as const,
     features:
@@ -32,6 +32,7 @@ function lineFeatures(path: number[], net: Network) {
 }
 
 function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?: maplibregl.Map) {
+  const positions = displayPositions(net.pops, m);
   const byId = new Map(net.pops.map((p) => [p.id, p]));
   const links = {
     type: "FeatureCollection" as const,
@@ -43,35 +44,21 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         const state = linkVisualState(l, z);
         return [{
         type: "Feature" as const,
-         properties: { id: l.id, km: l.distance_km, state, flowing: state === "up" || state === "unmonitored" },
+         properties: { id: l.id, km: l.distance_km, state, dwdm: isDwdmLink(from, to), flowing: state === "up" || state === "unmonitored" },
         geometry: {
           type: "LineString" as const,
           coordinates: [
-            [from.lng, from.lat],
-            [to.lng, to.lat],
+            positions.get(from.id) ?? [from.lng, from.lat],
+            positions.get(to.id) ?? [to.lng, to.lat],
           ],
         },
         }];
       }),
   };
-  // Group visually overlapping points without changing their stored coordinates.
-  const groups: { anchor: Network["pops"][number]; members: Network["pops"] }[] = [];
-  for (const p of net.pops) {
-    const point = m?.project([p.lng, p.lat]);
-    const group = groups.find(({ anchor }) => {
-      if (!m || !point) return anchor.lng === p.lng && anchor.lat === p.lat;
-      const other = m.project([anchor.lng, anchor.lat]);
-      return Math.hypot(point.x - other.x, point.y - other.y) <= 22;
-    });
-    if (group) group.members.push(p);
-    else groups.push({ anchor: p, members: [p] });
-  }
-  const rank = { none: 0, ok: 1, unknown: 2, warn: 3, down: 4 };
   const pops = {
     type: "FeatureCollection" as const,
-    features: groups.map(({ anchor: p, members }) => {
-      const states = members.map((member) => z?.enabled ? (z.byName[member.name]?.state ?? "unknown") : "none");
-      const state = states.reduce((worst, current) => rank[current] > rank[worst] ? current : worst, "none");
+    features: net.pops.map((p) => {
+      const state = z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none";
       return {
       type: "Feature" as const,
       properties: {
@@ -79,10 +66,11 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         name: p.name,
         city: p.city,
         state,
-        count: members.length,
-        ids: JSON.stringify(members.map((member) => member.id)),
+        label: p.name.replace(/^(sw|padtec|eci)-/i, "$1\n"),
+        count: 1,
+        ids: JSON.stringify([p.id]),
       },
-      geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+      geometry: { type: "Point" as const, coordinates: positions.get(p.id) ?? [p.lng, p.lat] },
       };
     }),
   };
@@ -90,8 +78,8 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
   return {
     links,
     pops,
-    primary: lineFeatures(ch?.primary_path ?? [], net),
-    secondary: lineFeatures(ch?.secondary_path ?? [], net),
+    primary: lineFeatures(ch?.primary_path ?? [], positions),
+    secondary: lineFeatures(ch?.secondary_path ?? [], positions),
   };
 }
 
@@ -130,12 +118,33 @@ export default function NetworkMap({
     let frame = 0;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let lastStep = -1;
+    const updateBolts = (time: number) => {
+      const source = m.getSource("dwdm-bolts") as maplibregl.GeoJSONSource | undefined;
+      if (!source) return;
+      const current = latest.current;
+      const data = buildData(current.network, current.channelId, current.zabbix, m);
+      const features = data.links.features.filter((f) => f.properties.dwdm && f.properties.flowing).flatMap((f) => {
+        const start = f.geometry.coordinates[0];
+        const end = f.geometry.coordinates[1];
+        if (!start || !end) return [];
+        const a = m.project(start as [number, number]);
+        const b = m.project(end as [number, number]);
+        const count = Math.max(1, Math.min(8, Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 110)));
+        return Array.from({ length: count }, (_, i) => {
+          const t = ((time / 1800) + i / count) % 1;
+          const p = m.unproject([a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t]);
+          return { type: "Feature" as const, properties: {}, geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] } };
+        });
+      });
+      source.setData({ type: "FeatureCollection", features });
+    };
     const animate = (time: number) => {
       const step = Math.floor(time / 100) % 20;
       if (m.getLayer("link-flow") && step !== lastStep) {
         const offset = step / 5;
         m.setPaintProperty("link-flow", "line-dasharray", offset <= 3 ? [0, offset, 1, 3 - offset] : [offset - 3, 3, 4 - offset, 0]);
         lastStep = step;
+        updateBolts(time);
       }
       frame = requestAnimationFrame(animate);
     };
@@ -143,6 +152,7 @@ export default function NetworkMap({
       cancelAnimationFrame(frame);
       if (motion.matches) {
         if (m.getLayer("link-flow")) m.setPaintProperty("link-flow", "line-dasharray", [1, 3]);
+        (m.getSource("dwdm-bolts") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
       } else frame = requestAnimationFrame(animate);
     };
     motion.addEventListener("change", updateMotion);
@@ -153,22 +163,40 @@ export default function NetworkMap({
       const down = cssVar("--destructive");
       const neutral = cssVar("--map-link");
       const outline = cssVar("--map-outline");
+      const fiber = cssVar("--dwdm");
+      const flash = cssVar("--dwdm-flash");
+      const canvas = document.createElement("canvas");
+      canvas.width = 32; canvas.height = 40;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = flash;
+        ctx.strokeStyle = fiber;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(19, 2); ctx.lineTo(6, 23); ctx.lineTo(15, 23);
+        ctx.lineTo(11, 38); ctx.lineTo(27, 15); ctx.lineTo(18, 15);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        m.addImage("fiber-bolt", ctx.getImageData(0, 0, 32, 40), { pixelRatio: 2 });
+      }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
       m.addSource("primary", { type: "geojson", data: d.primary });
       m.addSource("pops", { type: "geojson", data: d.pops });
+      m.addSource("dwdm-bolts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 2, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
       m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 2.5, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
+      if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
         source: "pops",
-        layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.4], "text-anchor": "top" },
+        layout: { "text-field": ["get", "label"], "text-size": 10, "text-max-width": 9, "text-offset": [0, 1.4], "text-anchor": "top", "text-allow-overlap": true },
         paint: { "text-color": cssVar("--map-label"), "text-halo-color": outline, "text-halo-width": 1.5 },
       });
       const showLink = (e: maplibregl.MapLayerMouseEvent) => {
@@ -210,11 +238,14 @@ export default function NetworkMap({
       });
       m.on("mouseenter", "pops", () => (m.getCanvas().style.cursor = "pointer"));
       m.on("mouseleave", "pops", () => (m.getCanvas().style.cursor = ""));
-      m.on("moveend", () => {
+       m.on("moveend", () => {
         const current = latest.current;
         const d = buildData(current.network, current.channelId, current.zabbix, m);
         (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
         (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
+         (m.getSource("primary") as maplibregl.GeoJSONSource).setData(d.primary);
+         (m.getSource("secondary") as maplibregl.GeoJSONSource).setData(d.secondary);
+         if (!motion.matches) updateBolts(performance.now());
       });
       fit(m, latest.current.network, latest.current.channelId);
       updateMotion();

@@ -27,6 +27,7 @@ vi.mock("maplibre-gl", () => ({
     getSource(id: string) { return mock.sources[id]; }
     isStyleLoaded() { return mock.styleLoaded; }
     project([lng, lat]: number[]) { return { x: (lng ?? 0) * 10000, y: (lat ?? 0) * 10000 }; }
+    unproject([x, y]: number[]) { return { lng: (x ?? 0) / 10000, lat: (y ?? 0) / 10000 }; }
     fitBounds() {}
     remove() {}
   },
@@ -54,15 +55,52 @@ describe("Equipamentos sobrepostos", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
-  it("lista o switch e o Padtec ao clicar na mesma localização", () => {
+  it("separa switch, Padtec e ECI sem alterar as coordenadas cadastradas", () => {
+    const net = { ...network, pops: [...network.pops, { ...network.pops[0], id: 3, name: "eci-jacuipe" }] } as Network;
+    const saved = JSON.stringify(net);
+    render(<NetworkMap network={net} channelId={null} />);
+    act(() => mock.handlers["load"]?.());
+    const features = mock.sources["pops"].data.features;
+    expect(features).toHaveLength(3);
+    expect(new Set(features.map((f: any) => JSON.stringify(f.geometry.coordinates))).size).toBe(3);
+    expect(JSON.stringify(net)).toBe(saved);
+    for (const feature of features) {
+      act(() => mock.handlers["click:pops"]?.({ features: [feature] }));
+      expect(mock.html).toContain(feature.properties.name);
+    }
+  });
+  it("abre cada equipamento separado na mesma localização", () => {
     render(<NetworkMap network={network} channelId={null} />);
     act(() => mock.handlers["load"]?.());
     const feature = mock.sources["pops"].data.features[0];
     act(() => mock.handlers["click:pops"]?.({ features: [feature] }));
     expect(mock.html).toContain("sw-jacuipe");
+    const padtec = mock.sources["pops"].data.features[1];
+    act(() => mock.handlers["click:pops"]?.({ features: [padtec] }));
     expect(mock.html).toContain("padtec-jacuipe");
-    expect(mock.sources["pops"].data.features).toHaveLength(1);
-    expect(feature.properties.count).toBe(2);
+    expect(mock.sources["pops"].data.features).toHaveLength(2);
+    expect(feature.properties.count).toBe(1);
+  });
+  it("liga as linhas às posições visuais e anima raios só em DWDM ativo ou não monitorado", () => {
+    const net: Network = {
+      ...network,
+      pops: [...network.pops, { id: 3, name: "eci-serrinha", city: "Serrinha", lat: -11.7, lng: -39, notes: "" }],
+      links: [{ id: 9, from_pop: 2, to_pop: 3, distance_km: 50, zabbix_host: "eci-serrinha", zabbix_item: "" }],
+    };
+    const request = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
+    const view = render(<NetworkMap network={net} channelId={null} />);
+    act(() => mock.handlers["load"]?.());
+    const link = mock.sources["links"].data.features[0];
+    expect(link.properties.dwdm).toBe(true);
+    expect(link.geometry.coordinates[0]).toEqual(mock.sources["pops"].data.features[1].geometry.coordinates);
+    act(() => request.mock.calls.at(-1)?.[0]?.(200));
+    expect(mock.sources["dwdm-bolts"].data.features.length).toBeGreaterThan(0);
+    const monitored = { ...net, links: [{ ...net.links[0], zabbix_item: "99" }] } as Network;
+    for (const state of ["down", "unknown", "up"] as const) {
+      view.rerender(<NetworkMap network={monitored} channelId={null} zabbix={{ enabled: true, byName: {}, byLink: { "9": { state, message: "" } } }} />);
+      act(() => request.mock.calls.at(-1)?.[0]?.(state === "down" ? 400 : state === "unknown" ? 600 : 800));
+      expect(mock.sources["dwdm-bolts"].data.features.length > 0).toBe(state === "up");
+    }
   });
   it("atualiza a ligação caída e recuperada sem mover o mapa", () => {
     const net: Network = { ...network, links: [{ id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "88" }] };
