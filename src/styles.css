@@ -63,6 +63,8 @@
   --online: oklch(0.75 0.17 150);
   --dwdm: oklch(0.8 0.2 145);
   --dwdm-flash: oklch(0.96 0.07 145);
+  --dwdm-online: oklch(0.8 0.14 210);
+  --dwdm-down: oklch(0.72 0.21 340);
   --map-link: oklch(0.56 0.025 245);
   --map-outline: oklch(0.2 0.02 250);
   --map-label: oklch(0.93 0.01 240);
