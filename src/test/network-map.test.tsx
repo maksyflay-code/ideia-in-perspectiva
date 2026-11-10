@@ -99,7 +99,7 @@ describe("Equipamentos sobrepostos", () => {
     expect(equipmentType("sw-paf")).toBe("sw");
     expect(equipmentType("padtec-paulo-afonso")).toBe("padtec");
     expect(equipmentType("eci-paf")).toBe("eci");
-    const net: Network = { ...network, pops: [...network.pops, { ...network.pops[0], id: 3, name: "eci-jacuipe" }] };
+    const net: Network = { ...network, pops: [...network.pops, { id: 3, name: "eci-jacuipe", city: "Jacuipe", lat: -12, lng: -39, notes: "" }] };
     const view = render(<NetworkMap network={net} channelId={null} />);
     act(() => mock.handlers["load"]?.());
     for (const state of ["ok", "down", "unknown"] as const) {
