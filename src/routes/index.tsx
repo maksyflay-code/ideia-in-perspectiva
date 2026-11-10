@@ -58,6 +58,15 @@ function MapPage() {
             )}
           </div>
         )}
+        <section aria-label="Legenda DWDM" className="border-b px-4 py-3 text-xs">
+          <h2 className="mb-2 font-mono text-[11px] uppercase text-muted-foreground">DWDM · Padtec / ECI</h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-muted-foreground">
+            <span className="flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-dwdm-online" aria-hidden="true" />Sem alertas</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-dwdm-down" aria-hidden="true" />Crítico</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-standby" aria-hidden="true" />Alerta</span>
+            <span className="flex items-center gap-2"><span className="h-2 w-2 shrink-0 rounded-full bg-map-link" aria-hidden="true" />Desconhecido</span>
+          </div>
+        </section>
         <div className="flex-1 overflow-auto p-3">
           <p className="mb-2 px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Canais</p>
           <button

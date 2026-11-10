@@ -34,6 +34,9 @@
   --color-signal: var(--signal);
   --color-standby: var(--standby);
   --color-online: var(--online);
+  --color-dwdm-online: var(--dwdm-online);
+  --color-dwdm-down: var(--dwdm-down);
+  --color-map-link: var(--map-link);
 }
 
 /* NOC theme: deep slate with fiber-cyan signal and amber standby */
