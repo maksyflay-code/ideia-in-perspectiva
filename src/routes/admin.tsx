@@ -231,31 +231,32 @@ function PopsTab({ net, onChange }: { net: Network; onChange: () => void }) {
 
 function ZabbixImport({ onChange }: { onChange: () => void }) {
   const [msg, setMsg] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState("");
+  async function run(prefix: string, label: string) {
+    setBusy(prefix);
+    setMsg("");
+    try {
+      const r = await importZabbixHosts({ data: { prefix } });
+      setMsg(`${r.found} ${label} no Zabbix · ${r.added} novos cadastrados`);
+      onChange();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Erro ao importar");
+    } finally {
+      setBusy("");
+    }
+  }
   return (
     <div className="space-y-2 border-t pt-3">
       <p className="text-xs font-semibold">Importar do Zabbix</p>
-      <p className="text-xs text-muted-foreground">Cria um POP para cada switch (sw-…) que ainda não está cadastrado. Depois edite a latitude/longitude de cada um.</p>
-      <button
-        type="button"
-        className={ghost}
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setMsg("");
-          try {
-            const r = await importZabbixHosts({ data: { prefix: "sw-" } });
-            setMsg(`${r.found} switches no Zabbix · ${r.added} novos cadastrados`);
-            onChange();
-          } catch (e) {
-            setMsg(e instanceof Error ? e.message : "Erro ao importar");
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "Importando…" : "Importar switches"}
-      </button>
+      <p className="text-xs text-muted-foreground">Cria um POP para cada equipamento que ainda não está cadastrado. Depois edite a latitude/longitude de cada um.</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={ghost} disabled={!!busy} onClick={() => run("sw-", "switches")}>
+          {busy === "sw-" ? "Importando…" : "Importar switches (sw-)"}
+        </button>
+        <button type="button" className={ghost} disabled={!!busy} onClick={() => run("eci-", "DWDM ECI")}>
+          {busy === "eci-" ? "Importando…" : "Importar DWDM ECI (eci-)"}
+        </button>
+      </div>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </div>
   );
