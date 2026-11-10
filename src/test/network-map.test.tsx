@@ -8,6 +8,7 @@ const mock = vi.hoisted(() => ({
   html: "",
   layers: {} as Record<string, any>,
   paints: vi.fn(),
+  styleLoaded: true,
 }));
 vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url", () => ({ default: "worker" }));
 vi.mock("maplibre-gl", () => ({
@@ -24,7 +25,7 @@ vi.mock("maplibre-gl", () => ({
     getLayer(id: string) { return mock.layers[id]; }
     setPaintProperty(...args: any[]) { mock.paints(...args); }
     getSource(id: string) { return mock.sources[id]; }
-    isStyleLoaded() { return true; }
+    isStyleLoaded() { return mock.styleLoaded; }
     project([lng, lat]: number[]) { return { x: (lng ?? 0) * 10000, y: (lat ?? 0) * 10000 }; }
     fitBounds() {}
     remove() {}
@@ -49,6 +50,7 @@ describe("Equipamentos sobrepostos", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     mock.handlers = {}; mock.sources = {}; mock.html = ""; mock.layers = {}; mock.paints.mockClear();
+    mock.styleLoaded = true;
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
@@ -81,6 +83,17 @@ describe("Equipamentos sobrepostos", () => {
     act(() => mock.handlers["load"]?.());
     expect(mock.sources["links"].data.features[0].properties.flowing).toBe(true);
     expect(mock.sources["links"].data.features[0].properties.state).toBe("unmonitored");
+  });
+  it("anima porta ativa quando o Zabbix responde durante carregamento de tiles", () => {
+    const net: Network = { ...network, links: [{ id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "88" }] };
+    const view = render(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: {} }} />);
+    act(() => mock.handlers["load"]?.());
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(false);
+    mock.styleLoaded = false;
+    view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: {}, byLink: { "8": { state: "up", message: "Porta ativa" } } }} />);
+    expect(mock.sources["links"].data.features[0].properties.state).toBe("up");
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(true);
+    expect(mock.layers["link-flow"].filter).toEqual(["==", ["get", "flowing"], true]);
   });
   it("mantém porta monitorada desconhecida ou caída sem animação", () => {
     const link = { id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "88" };
