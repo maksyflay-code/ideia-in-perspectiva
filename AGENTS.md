@@ -36,4 +36,4 @@ use the editor.
 - Admin auth is a single env-configured user (ADMIN_USER/ADMIN_PASSWORD) with an HMAC-signed httpOnly cookie; every mutating server function must call requireAdmin().
 - Zabbix integration is read-only via JSON-RPC in `src/server/zabbix.server.ts`, configured by ZABBIX_URL/ZABBIX_USER/ZABBIX_PASSWORD env; POP name must equal Zabbix technical host name. Why: no credentials in code, matching by name avoids extra mapping.
 - Link failures use the configured host's operational-interface item only (1 up, 2 down, readings older than 300 seconds unknown); never infer link failure from host alarms or zero traffic, because those do not establish an interface outage.
-- Link animation uses a filtered MapLibre dash layer with reduced-motion support; a topmost red failure layer overrides channel colors so outages remain visible on selected routes.
+- Link animation uses a filtered MapLibre dash layer only for confirmed operational up readings, with reduced-motion support; unmonitored and unknown links stay static to avoid implying verified flow, and a topmost red failure layer overrides channel colors.

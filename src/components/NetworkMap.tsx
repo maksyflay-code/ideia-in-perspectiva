@@ -40,9 +40,10 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         const from = byId.get(l.from_pop);
         const to = byId.get(l.to_pop);
         if (!from || !to) return [];
+        const state = linkVisualState(l, z);
         return [{
         type: "Feature" as const,
-         properties: { id: l.id, km: l.distance_km, state: linkVisualState(l, z) },
+         properties: { id: l.id, km: l.distance_km, state, flowing: state === "up" },
         geometry: {
           type: "LineString" as const,
           coordinates: [
@@ -160,7 +161,7 @@ export default function NetworkMap({
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 2, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
-      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["in", ["get", "state"], ["literal", ["up", "unmonitored"]]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 2.5, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": online, "line-width": 2.5, "line-dasharray": [1, 3] } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
