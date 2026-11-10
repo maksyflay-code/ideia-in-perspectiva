@@ -81,8 +81,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Mapa DWDM" },
-      { name: "description", content: "Mapa interativo da rede DWDM." },
+      { title: "Rede IVI Telecom" },
+      { name: "description", content: "Mapa interativo da rede DWDM da IVI Telecom." },
     ],
     links: [
       {

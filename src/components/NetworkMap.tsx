@@ -74,11 +74,10 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
       type: "Feature" as const,
       properties: {
         id: p.id,
-        name: members.length > 1 ? `${members.length} equipamentos` : p.name,
+        name: p.name,
         city: p.city,
         state,
         count: members.length,
-        countLabel: members.length > 1 ? String(members.length) : "",
         ids: JSON.stringify(members.map((member) => member.id)),
       },
       geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
@@ -139,12 +138,7 @@ export default function NetworkMap({
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": "#64748b", "line-width": 2, "line-opacity": 0.7 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": ["case", [">", ["get", "count"], 1], 14, 7], "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", "#64748b", signal], "circle-stroke-color": "#0f172a", "circle-stroke-width": 3 } });
-      m.addLayer({
-        id: "pop-counts", type: "symbol", source: "pops",
-        layout: { "text-field": ["get", "countLabel"], "text-size": 12, "text-allow-overlap": true, "text-ignore-placement": true },
-        paint: { "text-color": cssVar("--foreground"), "text-halo-color": cssVar("--background"), "text-halo-width": 1 },
-      });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", "#64748b", signal], "circle-stroke-color": "#0f172a", "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
