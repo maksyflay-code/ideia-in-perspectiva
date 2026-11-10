@@ -141,7 +141,8 @@ export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async (
   const d = await db();
   const names = (d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name);
   const z = await import("@/server/zabbix.server");
-  return z.getStatus(names);
+  const links = d.prepare("SELECT * FROM links ORDER BY id").all() as Link[];
+  return z.getStatus(names, links);
 });
 
 export const PENDING_NOTE = "Localização pendente — ajuste latitude/longitude";

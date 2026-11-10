@@ -3,6 +3,7 @@ import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
 import type { ZabbixStatus } from "@/server/zabbix.server";
+import { linkVisualState } from "@/lib/link-status";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -41,7 +42,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         if (!from || !to) return [];
         return [{
         type: "Feature" as const,
-        properties: { km: l.distance_km },
+         properties: { id: l.id, km: l.distance_km, state: linkVisualState(l, z) },
         geometry: {
           type: "LineString" as const,
           coordinates: [
@@ -125,27 +126,68 @@ export default function NetworkMap({
     m.on("error", (e) => console.error("Mapa:", e.error));
     map.current = m;
     m.addControl(new maplibregl.NavigationControl(), "top-right");
+    let frame = 0;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let lastStep = -1;
+    const animate = (time: number) => {
+      const step = Math.floor(time / 100) % 20;
+      if (m.getLayer("link-flow") && step !== lastStep) {
+        const offset = step / 5;
+        m.setPaintProperty("link-flow", "line-dasharray", offset <= 3 ? [0, offset, 1, 3 - offset] : [offset - 3, 3, 4 - offset, 0]);
+        lastStep = step;
+      }
+      frame = requestAnimationFrame(animate);
+    };
+    const updateMotion = () => {
+      cancelAnimationFrame(frame);
+      if (motion.matches) {
+        if (m.getLayer("link-flow")) m.setPaintProperty("link-flow", "line-dasharray", [1, 3]);
+      } else frame = requestAnimationFrame(animate);
+    };
+    motion.addEventListener("change", updateMotion);
     m.on("load", () => {
-      const signal = cssVar("--signal") || "#38bdf8";
-      const standby = cssVar("--standby") || "#f59e0b";
-      const online = cssVar("--online") || "#22c55e";
-      const down = cssVar("--destructive") || "#ef4444";
+      const signal = cssVar("--signal");
+      const standby = cssVar("--standby");
+      const online = cssVar("--online");
+      const down = cssVar("--destructive");
+      const neutral = cssVar("--map-link");
+      const outline = cssVar("--map-outline");
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
       m.addSource("primary", { type: "geojson", data: d.primary });
       m.addSource("pops", { type: "geojson", data: d.pops });
-      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": "#64748b", "line-width": 2, "line-opacity": 0.7 } });
+      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 2, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", "#64748b", signal], "circle-stroke-color": "#0f172a", "circle-stroke-width": 3 } });
+      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["in", ["get", "state"], ["literal", ["up", "unmonitored"]]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 2.5, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
         source: "pops",
         layout: { "text-field": ["get", "name"], "text-size": 12, "text-offset": [0, 1.4], "text-anchor": "top" },
-        paint: { "text-color": "#e2e8f0", "text-halo-color": "#0f172a", "text-halo-width": 1.5 },
+        paint: { "text-color": cssVar("--map-label"), "text-halo-color": outline, "text-halo-width": 1.5 },
       });
+      const showLink = (e: maplibregl.MapLayerMouseEvent) => {
+        // Let point clicks list colocated equipment instead of replacing their popup.
+        if (m.queryRenderedFeatures(e.point, { layers: ["pops"] }).length) return;
+        const id = Number(e.features?.[0]?.properties?.["id"]);
+        const current = latest.current;
+        const link = current.network.links.find((l) => l.id === id);
+        if (!link) return;
+        const from = current.network.pops.find((p) => p.id === link.from_pop)?.name ?? "?";
+        const to = current.network.pops.find((p) => p.id === link.to_pop)?.name ?? "?";
+        const state = linkVisualState(link, current.zabbix);
+        const labels = { up: "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento da porta" };
+        const message = current.zabbix?.byLink?.[String(id)]?.message;
+        new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat)
+          .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);
+      };
+      m.on("click", "links", showLink);
+      m.on("mouseenter", "links", () => (m.getCanvas().style.cursor = "pointer"));
+      m.on("mouseleave", "links", () => (m.getCanvas().style.cursor = ""));
       m.on("click", "pops", (e: maplibregl.MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -172,8 +214,13 @@ export default function NetworkMap({
         (m.getSource("pops") as maplibregl.GeoJSONSource).setData(buildData(current.network, current.channelId, current.zabbix, m).pops);
       });
       fit(m, latest.current.network, latest.current.channelId);
+      updateMotion();
     });
-    return () => m.remove();
+    return () => {
+      cancelAnimationFrame(frame);
+      motion.removeEventListener("change", updateMotion);
+      m.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -190,7 +237,9 @@ export default function NetworkMap({
   useEffect(() => {
     const m = map.current;
     if (!m || !m.isStyleLoaded() || !m.getSource("pops")) return;
-    (m.getSource("pops") as maplibregl.GeoJSONSource).setData(buildData(network, channelId, zabbix, m).pops);
+    const d = buildData(network, channelId, zabbix, m);
+    (m.getSource("pops") as maplibregl.GeoJSONSource).setData(d.pops);
+    (m.getSource("links") as maplibregl.GeoJSONSource).setData(d.links);
   }, [zabbix]);
 
   if (error)
