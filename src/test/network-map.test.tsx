@@ -1,6 +1,7 @@
 import { render, act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Network } from "@/lib/network.types";
+import { displayPositions, equipmentType } from "@/lib/map-layout";
 
 const mock = vi.hoisted(() => ({
   handlers: {} as Record<string, (...args: any[]) => void>,
@@ -80,6 +81,33 @@ describe("Equipamentos sobrepostos", () => {
     expect(mock.html).toContain("padtec-jacuipe");
     expect(mock.sources["pops"].data.features).toHaveLength(2);
     expect(feature.properties.count).toBe(1);
+  });
+  it("mantém PAF e Padtec Paulo Afonso juntos com apenas 24 pixels entre os centros", () => {
+    const pops = network.pops.map((p, i) => ({ ...p, name: i === 0 ? "sw-paf" : "padtec-paulo-afonso" }));
+    const camera = {
+      project: ([lng, lat]: [number, number]) => ({ x: lng * 10000, y: lat * 10000 }),
+      unproject: ([x, y]: [number, number]) => ({ lng: x / 10000, lat: y / 10000 }),
+    };
+    const positions = displayPositions(pops, camera);
+    const points = pops.map((p) => camera.project(positions.get(p.id) ?? [p.lng, p.lat]));
+    const a = points[0]; const b = points[1];
+    if (!a || !b) throw new Error("Equipamentos ausentes");
+    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeCloseTo(24);
+    expect((a.x + b.x) / 2).toBeCloseTo(-390000);
+  });
+  it("identifica Padtec e ECI nos pontos sem alterar os estados recebidos", () => {
+    expect(equipmentType("sw-paf")).toBe("sw");
+    expect(equipmentType("padtec-paulo-afonso")).toBe("padtec");
+    expect(equipmentType("eci-paf")).toBe("eci");
+    const net: Network = { ...network, pops: [...network.pops, { id: 3, name: "eci-jacuipe", city: "Jacuipe", lat: -12, lng: -39, notes: "" }] };
+    const view = render(<NetworkMap network={net} channelId={null} />);
+    act(() => mock.handlers["load"]?.());
+    for (const state of ["ok", "down", "unknown"] as const) {
+      const byName = Object.fromEntries(net.pops.map((p) => [p.name, { state, problems: [] }]));
+      view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName }} />);
+      expect(mock.sources["pops"].data.features.map((f: any) => f.properties.dwdm)).toEqual([false, true, true]);
+      expect(mock.sources["pops"].data.features.map((f: any) => f.properties.state)).toEqual([state, state, state]);
+    }
   });
   it("liga as linhas às posições visuais e anima raios só em DWDM ativo ou não monitorado", () => {
     const net: Network = {

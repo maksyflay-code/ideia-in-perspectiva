@@ -4,7 +4,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
 import type { ZabbixStatus } from "@/server/zabbix.server";
 import { linkVisualState } from "@/lib/link-status";
-import { displayPositions, isDwdmLink } from "@/lib/map-layout";
+import { displayPositions, equipmentType, isDwdmLink } from "@/lib/map-layout";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -59,6 +59,10 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
     type: "FeatureCollection" as const,
     features: net.pops.map((p) => {
       const state = z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none";
+      const position = positions.get(p.id) ?? [p.lng, p.lat] as [number, number];
+      const original = m?.project([p.lng, p.lat]);
+      const display = m?.project(position);
+      const side = original && display ? Math.sign(Math.round(display.x - original.x)) : 0;
       return {
       type: "Feature" as const,
       properties: {
@@ -66,6 +70,9 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         name: p.name,
         city: p.city,
         state,
+        dwdm: equipmentType(p.name) !== "sw",
+        labelAnchor: side < 0 ? "top-right" : side > 0 ? "top-left" : "top",
+        labelOffset: side < 0 ? [-1, 1] : side > 0 ? [1, 1] : [0, 1.4],
         label: p.name.replace(/^(sw|padtec|eci)-/i, "$1\n"),
         count: 1,
         ids: JSON.stringify([p.id]),
@@ -165,6 +172,8 @@ export default function NetworkMap({
       const outline = cssVar("--map-outline");
       const fiber = cssVar("--dwdm");
       const flash = cssVar("--dwdm-flash");
+      const dwdmOnline = cssVar("--dwdm-online");
+      const dwdmDown = cssVar("--dwdm-down");
       const canvas = document.createElement("canvas");
       canvas.width = 32; canvas.height = 40;
       const ctx = canvas.getContext("2d");
@@ -191,12 +200,12 @@ export default function NetworkMap({
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["case", ["==", ["get", "dwdm"], true], ["match", ["get", "state"], "ok", dwdmOnline, "down", dwdmDown, "warn", standby, "unknown", neutral, signal], ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal]], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
         source: "pops",
-        layout: { "text-field": ["get", "label"], "text-size": 10, "text-max-width": 9, "text-offset": [0, 1.4], "text-anchor": "top", "text-allow-overlap": true },
+        layout: { "text-field": ["get", "label"], "text-size": 10, "text-max-width": 9, "text-offset": ["get", "labelOffset"], "text-anchor": ["get", "labelAnchor"], "text-allow-overlap": true },
         paint: { "text-color": cssVar("--map-label"), "text-halo-color": outline, "text-halo-width": 1.5 },
       });
       const showLink = (e: maplibregl.MapLayerMouseEvent) => {

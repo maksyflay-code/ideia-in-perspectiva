@@ -30,7 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
-- Map points within 22 screen pixels are separated in a compact screen-space grid with original-size markers; marker, popup and link positions share the display layout, recalculated on camera changes without altering saved coordinates, so every equipment remains accessible.
+- Map points within 22 screen pixels use a 24-pixel screen-space grid with original-size markers and outward labels; marker, popup and link positions share the display layout, recalculated on camera changes without altering saved coordinates, so colocated equipment stays close and accessible.
 - Self-hosted on a Proxmox VM via Docker (NITRO_PRESET=node-server); never depend on Lovable Cloud or other hosted backends.
 - Storage is SQLite via Node's built-in `node:sqlite` in `src/server/db.server.ts`, imported dynamically so the Worker bundle never resolves it; schema is created with CREATE TABLE IF NOT EXISTS on startup.
 - Admin auth is a single env-configured user (ADMIN_USER/ADMIN_PASSWORD) with an HMAC-signed httpOnly cookie; every mutating server function must call requireAdmin().
@@ -39,3 +39,4 @@ use the editor.
 - Link animation uses a filtered MapLibre dash layer with reduced-motion support: unmonitored links have decorative channel-colored animation, confirmed up links animate in the online color, and monitored unknown/down links stay static; a topmost red failure layer overrides channel colors so decoration never replaces a confirmed failure.
 - Update live map sources whenever they exist, without gating on isStyleLoaded(); pending tile loads must not discard Zabbix status updates.
 - Identify DWDM endpoints by padtec-/eci- names and show their links with a green, thicker line and moving canvas lightning symbols; decoration never establishes capacity or status, monitored unknown/down stop bolts, confirmed failure stays topmost red, and reduced motion hides bolts.
+- DWDM markers use separate online/down color tokens from switches while preserving Zabbix states and neutral unknown styling, so equipment types remain distinguishable without implying a new monitoring rule.

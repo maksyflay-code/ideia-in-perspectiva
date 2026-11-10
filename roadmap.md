@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Aproximar os equipamentos na mesma localização e diferenciar as cores dos pontos DWDM por estado.
 - [x] Separar equipamentos próximos apenas na apresentação do mapa.
 - [x] Destacar ligações Padtec/ECI com raios verdes e validar os estados em testes e cenário visual.
 - [x] Animar as ligações no mapa sem mudar os pontos.

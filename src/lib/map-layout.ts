@@ -35,7 +35,7 @@ export function displayPositions(pops: Pop[], camera?: Camera) {
     group.forEach((pop, i) => {
       const row = Math.floor(i / columns);
       const count = Math.min(columns, group.length - row * columns);
-      const point = camera.unproject([center.x + ((i % columns) - (count - 1) / 2) * 76, center.y + (row - (rows - 1) / 2) * 64]);
+      const point = camera.unproject([center.x + ((i % columns) - (count - 1) / 2) * 24, center.y + (row - (rows - 1) / 2) * 24]);
       positions.set(pop.id, [point.lng, point.lat]);
     });
   }
