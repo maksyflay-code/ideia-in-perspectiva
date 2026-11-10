@@ -47,6 +47,7 @@ const network: Network = {
 
 describe("Equipamentos sobrepostos", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     mock.handlers = {}; mock.sources = {}; mock.html = ""; mock.layers = {}; mock.paints.mockClear();
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
