@@ -73,6 +73,21 @@ describe("Equipamentos sobrepostos", () => {
     view.rerender(<NetworkMap network={net} channelId={null} zabbix={status("up")} />);
     expect(mock.sources["links"].data.features[0].properties.state).toBe("up");
   });
+  it("só indica fluxo quando a porta confirma estado ativo, nunca por alarmes dos POPs", () => {
+    const link = { id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "" };
+    const net: Network = { ...network, links: [link] };
+    const byName = { "padtec-jacuipe": { state: "down" as const, problems: [{ name: "Alarme Padtec", severity: 4 }] } };
+    const view = render(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName }} />);
+    act(() => mock.handlers["load"]?.());
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(false);
+    const monitored = { ...net, links: [{ ...link, zabbix_item: "88" }] };
+    for (const state of ["unknown", "down", "up"] as const) {
+      view.rerender(<NetworkMap network={monitored} channelId={null} zabbix={{ enabled: true, byName, byLink: { "8": { state, message: "" } } }} />);
+      expect(mock.sources["links"].data.features[0].properties.flowing).toBe(state === "up");
+    }
+    view.rerender(<NetworkMap network={monitored} channelId={null} zabbix={{ enabled: true, byName, error: "offline", byLink: { "8": { state: "up", message: "" } } }} />);
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(false);
+  });
   it("avança a animação e cancela ao sair", () => {
     const request = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
     const cancel = vi.spyOn(window, "cancelAnimationFrame");
