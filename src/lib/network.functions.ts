@@ -151,13 +151,17 @@ export const importZabbixHosts = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await auth()).requireAdmin();
     const d = await db();
-    const hosts = await (await import("@/server/zabbix.server")).listHosts(data.prefix);
+    const zs = await import("@/server/zabbix.server");
+    const hosts =
+      data.prefix === zs.PADTEC_PREFIX
+        ? (await zs.listPadtecSites()).map((x) => ({ host: x.host, city: x.site.toUpperCase(), lat: null, lng: null }))
+        : (await zs.listHosts(data.prefix)).map((h) => ({ ...h, city: h.host.replace(/^[a-z]+-/i, "").replace(/[-_]+/g, " ").toUpperCase() }));
     const existing = new Set((d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name));
     const ins = d.prepare("INSERT INTO pops (name, city, lat, lng, notes) VALUES (?,?,?,?,?)");
     let added = 0;
     for (const h of hosts) {
       if (existing.has(h.host)) continue;
-      const city = h.host.replace(/^[a-z]+-/i, "").replace(/[-_]+/g, " ").toUpperCase();
+      const city = h.city;
       const hasLoc = h.lat !== null && h.lng !== null;
       ins.run(h.host, city, hasLoc ? h.lat : -12.97, hasLoc ? h.lng : -38.51, hasLoc ? "" : PENDING_NOTE);
       added++;

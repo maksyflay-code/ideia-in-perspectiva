@@ -78,6 +78,18 @@ export async function getStatus(names: string[]): Promise<ZabbixStatus> {
       }
       for (const s of Object.values(byName)) s.problems.sort((a, b) => b.severity - a.severity);
     }
+    if (names.some((n) => n.startsWith(PADTEC_PREFIX))) {
+      const padtec = await padtecTriggers(c, true);
+      for (const n of names) if (n.startsWith(PADTEC_PREFIX)) byName[n] = { state: padtec.found ? "ok" : "unknown", problems: [] };
+      for (const t of padtec.triggers) {
+        const s = byName[t.pop];
+        if (!s) continue;
+        s.problems.push({ name: t.description, severity: t.severity });
+        if (t.severity >= 4) s.state = "down";
+        else if (t.severity >= 2 && s.state !== "down") s.state = "warn";
+      }
+      for (const n of names) byName[n]?.problems.sort((a, b) => b.severity - a.severity);
+    }
     const value = { enabled: true, byName };
     cache = { at: Date.now(), key, value };
     return value;
@@ -101,4 +113,53 @@ export async function listHosts(prefix: string) {
     const lng = Number(inv.location_lon);
     return { host: h.host, lat: inv.location_lat && !isNaN(lat) ? lat : null, lng: inv.location_lon && !isNaN(lng) ? lng : null };
   });
+}
+
+// Padtec nodes are not separate Zabbix hosts: all alarms live on one host and are
+// written as "POP: <NOME> - ...". Each site maps to a POP named padtec-<slug>.
+export const PADTEC_HOST = "Padtec - Servidor";
+export const PADTEC_PREFIX = "padtec-";
+
+export function padtecSlug(site: string) {
+  return (
+    PADTEC_PREFIX +
+    site
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+  );
+}
+
+export function padtecSite(description: string) {
+  const m = /^POP:\s*(.+?)\s+-\s/.exec(description);
+  return m ? m[1]!.trim() : null;
+}
+
+async function padtecTriggers(c: NonNullable<ReturnType<typeof cfg>>, onlyActive: boolean) {
+  const hosts = (await call(c, "host.get", { output: ["hostid"], filter: { host: [PADTEC_HOST] } })) as { hostid: string }[];
+  if (!hosts.length) return { found: false, triggers: [] as { pop: string; site: string; description: string; severity: number }[] };
+  const list = (await call(c, "trigger.get", {
+    output: ["description", "priority"],
+    hostids: [hosts[0]!.hostid],
+    ...(onlyActive ? { filter: { value: 1 }, monitored: true, skipDependent: true } : {}),
+    expandDescription: true,
+  })) as { description: string; priority: string }[];
+  const triggers = [];
+  for (const t of list) {
+    const site = padtecSite(t.description);
+    if (site) triggers.push({ pop: padtecSlug(site), site, description: t.description, severity: Number(t.priority) });
+  }
+  return { found: true, triggers };
+}
+
+export async function listPadtecSites() {
+  const c = cfg();
+  if (!c) throw new Error("Zabbix não configurado (ZABBIX_URL/ZABBIX_USER/ZABBIX_PASSWORD)");
+  const r = await padtecTriggers(c, false);
+  if (!r.found) throw new Error(`Host "${PADTEC_HOST}" não encontrado no Zabbix`);
+  const sites = new Map<string, string>();
+  for (const t of r.triggers) sites.set(t.pop, t.site);
+  return [...sites].map(([host, site]) => ({ host, site }));
 }

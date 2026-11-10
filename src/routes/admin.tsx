@@ -256,6 +256,9 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
         <button type="button" className={ghost} disabled={!!busy} onClick={() => run("eci-", "DWDM ECI")}>
           {busy === "eci-" ? "Importando…" : "Importar DWDM ECI (eci-)"}
         </button>
+        <button type="button" className={ghost} disabled={!!busy} onClick={() => run("padtec-", "sites Padtec")}>
+          {busy === "padtec-" ? "Importando…" : "Importar DWDM Padtec"}
+        </button>
       </div>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </div>
