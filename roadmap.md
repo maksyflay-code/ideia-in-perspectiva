@@ -1,6 +1,6 @@
 # Tarefas
-- [ ] Separar equipamentos próximos apenas na apresentação do mapa.
-- [ ] Destacar ligações Padtec/ECI com raios verdes e validar os estados.
+- [x] Separar equipamentos próximos apenas na apresentação do mapa.
+- [x] Destacar ligações Padtec/ECI com raios verdes e validar os estados em testes e cenário visual.
 - [x] Animar as ligações no mapa sem mudar os pontos.
 - [x] Consultar o status da porta no Zabbix e destacar quedas em vermelho.
 - [x] Validar animação, quedas, recuperação e ausência de monitoramento.
