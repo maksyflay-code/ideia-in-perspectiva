@@ -157,7 +157,7 @@ export const importZabbixHosts = createServerFn({ method: "POST" })
     let added = 0;
     for (const h of hosts) {
       if (existing.has(h.host)) continue;
-      const city = h.host.replace(/^sw-/i, "").replace(/[-_]+/g, " ").toUpperCase();
+      const city = h.host.replace(/^[a-z]+-/i, "").replace(/[-_]+/g, " ").toUpperCase();
       const hasLoc = h.lat !== null && h.lng !== null;
       ins.run(h.host, city, hasLoc ? h.lat : -12.97, hasLoc ? h.lng : -38.51, hasLoc ? "" : PENDING_NOTE);
       added++;
