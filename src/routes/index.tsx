@@ -9,9 +9,9 @@ const NetworkMap = lazy(() => import("@/components/NetworkMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mapa DWDM — NOC" },
+      { title: "Rede IVI Telecom" },
       { name: "description", content: "Mapa interativo da rede DWDM com POPs, ligações e rotas de canais." },
-      { property: "og:title", content: "Mapa DWDM — NOC" },
+      { property: "og:title", content: "Rede IVI Telecom" },
       { property: "og:description", content: "Mapa interativo da rede DWDM com POPs, ligações e rotas de canais." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -35,7 +35,7 @@ function MapPage() {
       <aside className="flex w-full flex-col border-b bg-card md:w-80 md:border-b-0 md:border-r">
         <header className="flex items-center justify-between border-b px-4 py-3">
           <div>
-            <h1 className="font-mono text-sm font-bold tracking-widest text-primary">MAPA DWDM</h1>
+            <h1 className="font-mono text-sm font-bold tracking-widest text-primary">REDE IVI TELECOM</h1>
             <p className="text-xs text-muted-foreground">
               {net.pops.length} POPs · {net.links.length} ligações
             </p>
