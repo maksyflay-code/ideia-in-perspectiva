@@ -155,7 +155,7 @@ export default function NetworkMap({
       m.on("click", "pops", (e: maplibregl.MapLayerMouseEvent) => {
         const f = e.features?.[0];
         if (!f) return;
-        const ids = JSON.parse(String(f.properties?.ids ?? "[]")) as number[];
+        const ids = JSON.parse(String(f.properties?.["ids"] ?? "[]")) as number[];
         const current = latest.current;
         const members = current.network.pops.filter((p) => ids.includes(p.id));
         const label: Record<string, string> = { ok: "Zabbix: sem alertas", warn: "Zabbix: alerta", down: "Zabbix: crítico", unknown: "Zabbix: host não encontrado" };

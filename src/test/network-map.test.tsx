@@ -13,7 +13,8 @@ vi.mock("maplibre-gl", () => ({
   NavigationControl: class {},
   Map: class {
     on(event: string, layer: string | ((...args: any[]) => void), callback?: (...args: any[]) => void) {
-      mock.handlers[typeof layer === "string" ? `${event}:${layer}` : event] = callback ?? layer;
+      if (typeof layer === "function") mock.handlers[event] = layer;
+      else if (callback) mock.handlers[`${event}:${layer}`] = callback;
     }
     addControl() {}
     addSource(id: string, source: any) { mock.sources[id] = { ...source, setData(data: any) { this.data = data; } }; }
@@ -47,12 +48,12 @@ describe("Equipamentos sobrepostos", () => {
   });
   it("lista o switch e o Padtec ao clicar na mesma localização", () => {
     render(<NetworkMap network={network} channelId={null} />);
-    act(() => mock.handlers.load?.());
-    const feature = mock.sources.pops.data.features[0];
+    act(() => mock.handlers["load"]?.());
+    const feature = mock.sources["pops"].data.features[0];
     act(() => mock.handlers["click:pops"]?.({ features: [feature] }));
     expect(mock.html).toContain("sw-jacuipe");
     expect(mock.html).toContain("padtec-jacuipe");
-    expect(mock.sources.pops.data.features).toHaveLength(1);
+    expect(mock.sources["pops"].data.features).toHaveLength(1);
     expect(feature.properties.count).toBe(2);
   });
 });
