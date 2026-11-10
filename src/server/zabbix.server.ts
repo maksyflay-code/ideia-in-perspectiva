@@ -1,9 +1,11 @@
 // Read-only Zabbix client. Credentials come from ZABBIX_URL / ZABBIX_USER / ZABBIX_PASSWORD.
+import type { Link } from "@/lib/network.types";
+import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
 export type PopStatus = {
   state: "ok" | "warn" | "down" | "unknown";
   problems: { name: string; severity: number }[];
 };
-export type ZabbixStatus = { enabled: boolean; error?: string; byName: Record<string, PopStatus> };
+export type ZabbixStatus = { enabled: boolean; error?: string; byName: Record<string, PopStatus>; byLink?: Record<string, LinkStatus> };
 
 let token: string | null = null;
 let cache: { at: number; key: string; value: ZabbixStatus } | null = null;
@@ -41,10 +43,10 @@ async function call(c: NonNullable<ReturnType<typeof cfg>>, method: string, para
   }
 }
 
-export async function getStatus(names: string[]): Promise<ZabbixStatus> {
+export async function getStatus(names: string[], links: Link[] = []): Promise<ZabbixStatus> {
   const c = cfg();
   if (!c) return { enabled: false, byName: {} };
-  const key = [...names].sort().join("|");
+  const key = JSON.stringify([[...names].sort(), links.map((l) => [l.id, l.zabbix_host, l.zabbix_item])]);
   if (cache && cache.key === key && Date.now() - cache.at < 30000) return cache.value;
   try {
     const hosts = (await call(c, "host.get", {
@@ -90,7 +92,22 @@ export async function getStatus(names: string[]): Promise<ZabbixStatus> {
       }
       for (const n of names) byName[n]?.problems.sort((a, b) => b.severity - a.severity);
     }
-    const value = { enabled: true, byName };
+    const byLink: Record<string, LinkStatus> = {};
+    const monitored = links.filter((l) => l.zabbix_item.trim());
+    if (monitored.length) {
+      try {
+        const items = (await call(c, "item.get", {
+          output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
+          itemids: [...new Set(monitored.map((l) => l.zabbix_item.trim()))],
+          selectHosts: ["host"],
+        })) as InterfaceItem[];
+        const byId = new Map(items.map((i) => [i.itemid, i]));
+        for (const l of monitored) byLink[String(l.id)] = interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
+      } catch {
+        for (const l of monitored) byLink[String(l.id)] = { state: "unknown", message: "Não foi possível consultar a porta no Zabbix" };
+      }
+    }
+    const value = { enabled: true, byName, byLink };
     cache = { at: Date.now(), key, value };
     return value;
   } catch (e) {

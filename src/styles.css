@@ -61,6 +61,9 @@
   --signal: oklch(0.78 0.14 210);
   --standby: oklch(0.8 0.15 75);
   --online: oklch(0.75 0.17 150);
+  --map-link: oklch(0.56 0.025 245);
+  --map-outline: oklch(0.2 0.02 250);
+  --map-label: oklch(0.93 0.01 240);
 }
 
 @layer base {

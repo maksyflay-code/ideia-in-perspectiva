@@ -8,9 +8,9 @@ import { missingHops, type Channel, type Link as FiberLink, type Network, type P
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Painel Admin — Mapa DWDM" },
+      { title: "Admin — Rede IVI Telecom" },
       { name: "description", content: "Cadastro de POPs, ligações de fibra e canais DWDM." },
-      { property: "og:title", content: "Painel Admin — Mapa DWDM" },
+      { property: "og:title", content: "Admin — Rede IVI Telecom" },
       { property: "og:description", content: "Cadastro de POPs, ligações de fibra e canais DWDM." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -315,8 +315,10 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
           <label className="block text-xs text-muted-foreground">Destino</label>
           <PopSelect name="to" net={net} value={edit?.to_pop} />
           <input name="km" placeholder="Distância (km)" defaultValue={edit?.distance_km} className={input} required />
-          <input name="zh" placeholder="Zabbix host (opcional)" defaultValue={edit?.zabbix_host} className={input} />
-          <input name="zi" placeholder="Zabbix item ID (opcional)" defaultValue={edit?.zabbix_item} className={input} />
+          <label className="block text-xs text-muted-foreground" htmlFor="link-host">Host Zabbix da porta</label>
+          <input id="link-host" name="zh" placeholder="Ex: sw-serrinha" defaultValue={edit?.zabbix_host} className={input} />
+          <label className="block text-xs text-muted-foreground" htmlFor="link-item">Item ID · estado operacional (ifOperStatus)</label>
+          <input id="link-item" name="zi" inputMode="numeric" pattern="[0-9]*" placeholder="ID do item da porta deste enlace" defaultValue={edit?.zabbix_item} className={input} />
           {s.err && <p className="text-sm text-destructive">{s.err}</p>}
           <div className="flex gap-2">
             <button className={btn} disabled={s.busy || net.pops.length < 2}>Salvar</button>
