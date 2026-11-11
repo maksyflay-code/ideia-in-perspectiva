@@ -11,6 +11,7 @@ async function auth() {
 }
 
 export const getNetwork = createServerFn({ method: "GET" }).handler(async (): Promise<Network> => {
+  await (await auth()).requireViewer();
   const d = await db();
   const pops = d.prepare("SELECT * FROM pops ORDER BY name").all() as Pop[];
   const links = d.prepare("SELECT * FROM links ORDER BY id").all() as Link[];
@@ -34,16 +35,18 @@ export const getNetwork = createServerFn({ method: "GET" }).handler(async (): Pr
 
 export const getMe = createServerFn({ method: "GET" }).handler(async () => {
   const a = await auth();
-  return { user: await a.currentAdmin() };
+  const u = await a.currentUser();
+  return { user: u?.role === "admin" ? u.user : null, viewer: u?.user ?? null };
 });
 
 export const login = createServerFn({ method: "POST" })
   .inputValidator(z.object({ user: z.string().min(1), password: z.string().min(1) }))
   .handler(async ({ data }) => {
     const a = await auth();
-    if (!a.checkCredentials(data.user, data.password)) return { ok: false as const };
-    await a.startSession(data.user);
-    return { ok: true as const };
+    const role = a.checkCredentials(data.user, data.password);
+    if (!role) return { ok: false as const, role: null };
+    await a.startSession(data.user, role);
+    return { ok: true as const, role };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {
@@ -138,6 +141,7 @@ export const deleteItem = createServerFn({ method: "POST" })
   });
 
 export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async () => {
+  await (await auth()).requireViewer();
   const d = await db();
   const names = (d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name);
   const z = await import("@/server/zabbix.server");

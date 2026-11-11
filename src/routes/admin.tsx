@@ -17,10 +17,8 @@ export const Route = createFileRoute("/admin")({
     ],
   }),
   loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(meQuery),
-      context.queryClient.ensureQueryData(networkQuery),
-    ]);
+    const me = await context.queryClient.ensureQueryData(meQuery);
+    if (me.user) await context.queryClient.ensureQueryData(networkQuery);
   },
   component: AdminPage,
 });
@@ -46,7 +44,8 @@ function LoginForm() {
     const r = await login({ data: { user: String(f.get("user")), password: String(f.get("password")) } });
     setBusy(false);
     if (!r.ok) return setErr("Usuário ou senha inválidos");
-    qc.invalidateQueries({ queryKey: ["me"] });
+    if (r.role !== "admin") return setErr("Este usuário só tem acesso ao mapa");
+    await qc.invalidateQueries();
   }
   return (
     <div className="flex min-h-screen items-center justify-center p-4">

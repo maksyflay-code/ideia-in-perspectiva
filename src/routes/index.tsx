@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { networkQuery } from "@/lib/network.queries";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { meQuery, networkQuery } from "@/lib/network.queries";
 import MapPage from "@/components/MapPage";
 
 export const Route = createFileRoute("/")({
@@ -13,6 +13,10 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  beforeLoad: async ({ context }) => {
+    const me = await context.queryClient.fetchQuery(meQuery);
+    if (!me.viewer) throw redirect({ to: "/login" });
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(networkQuery),
   component: () => <MapPage kind="sw" />,
 });
