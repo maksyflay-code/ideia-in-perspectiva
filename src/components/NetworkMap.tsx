@@ -4,7 +4,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
 import type { ZabbixStatus } from "@/server/zabbix.server";
 import { linkVisualState } from "@/lib/link-status";
-import { displayPositions, equipmentType, isDwdmLink } from "@/lib/map-layout";
+import { displayPositions, equipmentType, isDwdmLink, mapLabel } from "@/lib/map-layout";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -73,7 +73,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         dwdm: equipmentType(p.name) !== "sw",
         labelAnchor: side < 0 ? "top-right" : side > 0 ? "top-left" : "top",
         labelOffset: side < 0 ? [-1, 1] : side > 0 ? [1, 1] : [0, 1.4],
-        label: p.name.replace(/^(sw|padtec|eci)-/i, "$1\n"),
+        label: mapLabel(p.name),
         count: 1,
         ids: JSON.stringify([p.id]),
       },
