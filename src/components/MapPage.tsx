@@ -1,5 +1,7 @@
-import { Link, ClientOnly } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { Link, ClientOnly, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { logout } from "@/lib/network.functions";
 import { lazy, Suspense, useState } from "react";
 import { networkQuery, zabbixQuery } from "@/lib/network.queries";
 import { pathDistance } from "@/lib/network.types";
@@ -15,11 +17,19 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
   const zc = { ok: 0, warn: 0, down: 0, unknown: 0 };
   if (zbx?.enabled) for (const p of net.pops) zc[zbx.byName[p.name]?.state ?? "unknown"]++;
   const ch = net.channels.find((c) => c.id === channelId);
+  const [hidden, setHidden] = useState(false);
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  async function sair() {
+    await logout();
+    qc.clear();
+    navigate({ to: "/login", replace: true });
+  }
   const name = (id: number) => net.pops.find((p) => p.id === id)?.name ?? "?";
 
   return (
     <div className="flex h-screen flex-col md:flex-row">
-      <aside className="flex w-full flex-col border-b bg-card md:w-80 md:border-b-0 md:border-r">
+      {!hidden && <aside className="flex w-full flex-col border-b bg-card md:w-80 md:border-b-0 md:border-r">
         <header className="flex items-center justify-between border-b px-4 py-3">
           <div>
             <h1 className="font-mono text-sm font-bold tracking-widest text-primary">{kind === "sw" ? "REDE IVI TELECOM" : "DWDM IVI TELECOM"}</h1>
@@ -27,9 +37,13 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
               {net.pops.length} POPs · {net.links.length} ligações
             </p>
           </div>
-          <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground">
-            Admin →
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground">Admin</Link>
+            <button onClick={sair} className="text-xs text-muted-foreground hover:text-foreground">Sair</button>
+            <button onClick={() => setHidden(true)} aria-label="Ocultar barra lateral" title="Ocultar barra lateral" className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </div>
         </header>
         <nav aria-label="Mapas" className="grid grid-cols-2 gap-1 border-b p-2 text-xs">
           <Link to="/" className={`rounded-md px-3 py-2 text-center ${kind === "sw" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>Switches</Link>
@@ -96,8 +110,13 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
             </div>
           )}
         </div>
-      </aside>
+      </aside>}
       <main className="relative min-h-[60vh] flex-1">
+        {hidden && (
+          <button onClick={() => setHidden(false)} aria-label="Mostrar barra lateral" title="Mostrar barra lateral" className="absolute left-3 top-3 z-10 rounded-md border bg-card p-2 text-foreground shadow hover:bg-muted">
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        )}
         <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
           <Suspense fallback={<div className="h-full w-full bg-muted" />}>
             <NetworkMap key={kind} network={net} channelId={channelId} zabbix={zbx} />
