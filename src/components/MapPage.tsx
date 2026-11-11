@@ -35,8 +35,6 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
           <Link to="/" className={`rounded-md px-3 py-2 text-center ${kind === "sw" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>Switches</Link>
           <Link to="/dwdm" className={`rounded-md px-3 py-2 text-center ${kind === "dwdm" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>DWDM Padtec / ECI</Link>
         </nav>
-        <header className="hidden">
-        </header>
         {zbx?.enabled && (
           <div className="border-b px-4 py-2 text-xs">
             {zbx.error ? (
