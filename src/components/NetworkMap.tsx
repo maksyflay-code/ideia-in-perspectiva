@@ -66,8 +66,8 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
     features: [...groups.values()].map((members) => {
       members.sort((a, b) => equipmentType(a.name).localeCompare(equipmentType(b.name)) || a.name.localeCompare(b.name));
       const states = members.map((p) => (z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none"));
-      const state = states.reduce((w, s) => ((rank[s] ?? 0) > (rank[w] ?? 0) ? s : w), states[0]);
-      const p = members[0];
+      const state = states.reduce((w, s) => ((rank[s] ?? 0) > (rank[w] ?? 0) ? s : w), states[0] ?? "none");
+      const p = members[0]!;
       return {
       type: "Feature" as const,
       properties: {
