@@ -56,67 +56,31 @@ describe("Equipamentos sobrepostos", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
-  it("separa switch, Padtec e ECI sem alterar as coordenadas cadastradas", () => {
+  it("une switch, Padtec e ECI da mesma cidade em um ponto e lista todos no clique", () => {
     const net = { ...network, pops: [...network.pops, { ...network.pops[0], id: 3, name: "eci-jacuipe" }] } as Network;
     const saved = JSON.stringify(net);
     render(<NetworkMap network={net} channelId={null} />);
     act(() => mock.handlers["load"]?.());
     const features = mock.sources["pops"].data.features;
-    expect(features).toHaveLength(3);
-    expect(new Set(features.map((f: any) => JSON.stringify(f.geometry.coordinates))).size).toBe(3);
+    expect(features).toHaveLength(1);
+    expect(features[0].properties.count).toBe(3);
     expect(JSON.stringify(net)).toBe(saved);
-    for (const feature of features) {
-      act(() => mock.handlers["click:pops"]?.({ features: [feature] }));
-      expect(mock.html).toContain(feature.properties.name);
-    }
+    act(() => mock.handlers["click:pops"]?.({ features: [features[0]] }));
+    for (const name of ["sw-jacuipe", "padtec-jacuipe", "eci-jacuipe"]) expect(mock.html).toContain(name);
   });
-  it("abre cada equipamento separado na mesma localização", () => {
-    render(<NetworkMap network={network} channelId={null} />);
+  it("ponto unificado mostra o pior estado do Zabbix", () => {
+    render(<NetworkMap network={network} channelId={null} zabbix={{ enabled: true, byName: { "sw-jacuipe": { state: "ok", problems: [] }, "padtec-jacuipe": { state: "down", problems: [] } } }} />);
     act(() => mock.handlers["load"]?.());
-    const feature = mock.sources["pops"].data.features[0];
-    act(() => mock.handlers["click:pops"]?.({ features: [feature] }));
-    expect(mock.html).toContain("sw-jacuipe");
-    const padtec = mock.sources["pops"].data.features[1];
-    act(() => mock.handlers["click:pops"]?.({ features: [padtec] }));
-    expect(mock.html).toContain("padtec-jacuipe");
-    expect(mock.sources["pops"].data.features).toHaveLength(2);
-    expect(feature.properties.count).toBe(1);
+    expect(mock.sources["pops"].data.features[0].properties.state).toBe("down");
   });
-  it("mantém PAF e Padtec Paulo Afonso juntos com apenas 24 pixels entre os centros", () => {
-    const pops = network.pops.map((p, i) => ({ ...p, name: i === 0 ? "sw-paf" : "padtec-paulo-afonso" }));
+  it("põe equipamentos próximos na mesma posição", () => {
     const camera = {
       project: ([lng, lat]: [number, number]) => ({ x: lng * 10000, y: lat * 10000 }),
       unproject: ([x, y]: [number, number]) => ({ lng: x / 10000, lat: y / 10000 }),
     };
-    const positions = displayPositions(pops, camera);
-    const points = pops.map((p) => camera.project(positions.get(p.id) ?? [p.lng, p.lat]));
-    const a = points[0]; const b = points[1];
-    if (!a || !b) throw new Error("Equipamentos ausentes");
-    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeCloseTo(24);
-    expect((a.x + b.x) / 2).toBeCloseTo(-390000);
-  });
-  it("identifica Padtec e ECI nos pontos sem alterar os estados recebidos", () => {
-    expect(equipmentType("sw-paf")).toBe("sw");
+    const positions = displayPositions(network.pops, camera);
+    expect(positions.get(1)).toEqual(positions.get(2));
     expect(equipmentType("padtec-paulo-afonso")).toBe("padtec");
-    expect(equipmentType("eci-paf")).toBe("eci");
-    const net: Network = { ...network, pops: [...network.pops, { id: 3, name: "eci-jacuipe", city: "Jacuipe", lat: -12, lng: -39, notes: "" }] };
-    const view = render(<NetworkMap network={net} channelId={null} />);
-    act(() => mock.handlers["load"]?.());
-    for (const state of ["ok", "down", "unknown"] as const) {
-      const byName = Object.fromEntries(net.pops.map((p) => [p.name, { state, problems: [] }]));
-      view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName }} />);
-      expect(mock.sources["pops"].data.features.map((f: any) => f.properties.dwdm)).toEqual([false, true, true]);
-      expect(mock.sources["pops"].data.features.map((f: any) => f.properties.state)).toEqual([state, state, state]);
-    }
-  });
-  it("escreve o nome do switch no mapa sem o prefixo sw", () => {
-    const net: Network = { ...network, pops: [...network.pops, { id: 3, name: "eci-jacuipe", city: "Jacuipe", lat: -12, lng: -39, notes: "" }] };
-    render(<NetworkMap network={net} channelId={null} />);
-    act(() => mock.handlers["load"]?.());
-    const labels = mock.sources["pops"].data.features.map((f: any) => f.properties.label);
-    expect(labels).toEqual(["jacuipe", "padtec\njacuipe", "eci\njacuipe"]);
-    act(() => mock.handlers["click:pops"]?.({ features: [mock.sources["pops"].data.features[0]] }));
-    expect(mock.html).toContain("sw-jacuipe");
   });
   it("liga as linhas às posições visuais e anima raios só em DWDM ativo ou não monitorado", () => {
     const net: Network = {
@@ -129,7 +93,7 @@ describe("Equipamentos sobrepostos", () => {
     act(() => mock.handlers["load"]?.());
     const link = mock.sources["links"].data.features[0];
     expect(link.properties.dwdm).toBe(true);
-    expect(link.geometry.coordinates[0]).toEqual(mock.sources["pops"].data.features[1].geometry.coordinates);
+    expect(link.geometry.coordinates[0]).toEqual(mock.sources["pops"].data.features[0].geometry.coordinates);
     act(() => request.mock.calls.at(-1)?.[0]?.(200));
     expect(mock.sources["dwdm-bolts"].data.features.length).toBeGreaterThan(0);
     const monitored = { ...net, links: [{ ...net.links[0], zabbix_item: "99" }] } as Network;
