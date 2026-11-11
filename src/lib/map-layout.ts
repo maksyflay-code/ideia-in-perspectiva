@@ -33,17 +33,9 @@ export function displayPositions(pops: Pop[], camera?: Camera) {
   }
   for (const group of groups) {
     if (group.length < 2) continue;
-    group.sort((a, b) => equipmentType(a.name).localeCompare(equipmentType(b.name)) || a.name.localeCompare(b.name));
     const points = group.map((p) => camera.project([p.lng, p.lat]));
-    const center = { x: points.reduce((n, p) => n + p.x, 0) / points.length, y: points.reduce((n, p) => n + p.y, 0) / points.length };
-    const columns = Math.min(group.length, 3);
-    const rows = Math.ceil(group.length / columns);
-    group.forEach((pop, i) => {
-      const row = Math.floor(i / columns);
-      const count = Math.min(columns, group.length - row * columns);
-      const point = camera.unproject([center.x + ((i % columns) - (count - 1) / 2) * 24, center.y + (row - (rows - 1) / 2) * 24]);
-      positions.set(pop.id, [point.lng, point.lat]);
-    });
+    const center = camera.unproject([points.reduce((n, p) => n + p.x, 0) / points.length, points.reduce((n, p) => n + p.y, 0) / points.length]);
+    for (const pop of group) positions.set(pop.id, [center.lng, center.lat]);
   }
   return positions;
 }

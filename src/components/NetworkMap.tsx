@@ -55,14 +55,19 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         }];
       }),
   };
+  const rank: Record<string, number> = { down: 4, warn: 3, unknown: 2, ok: 1, none: 0 };
+  const groups = new Map<string, Network["pops"]>();
+  for (const p of net.pops) {
+    const key = String(positions.get(p.id) ?? [p.lng, p.lat]);
+    groups.set(key, [...(groups.get(key) ?? []), p]);
+  }
   const pops = {
     type: "FeatureCollection" as const,
-    features: net.pops.map((p) => {
-      const state = z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none";
-      const position = positions.get(p.id) ?? [p.lng, p.lat] as [number, number];
-      const original = m?.project([p.lng, p.lat]);
-      const display = m?.project(position);
-      const side = original && display ? Math.sign(Math.round(display.x - original.x)) : 0;
+    features: [...groups.values()].map((members) => {
+      members.sort((a, b) => equipmentType(a.name).localeCompare(equipmentType(b.name)) || a.name.localeCompare(b.name));
+      const states = members.map((p) => (z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none"));
+      const state = states.reduce((w, s) => ((rank[s] ?? 0) > (rank[w] ?? 0) ? s : w), states[0]);
+      const p = members[0];
       return {
       type: "Feature" as const,
       properties: {
@@ -70,12 +75,12 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         name: p.name,
         city: p.city,
         state,
-        dwdm: equipmentType(p.name) !== "sw",
-        labelAnchor: side < 0 ? "top-right" : side > 0 ? "top-left" : "top",
-        labelOffset: side < 0 ? [-1, 1] : side > 0 ? [1, 1] : [0, 1.4],
-        label: mapLabel(p.name),
-        count: 1,
-        ids: JSON.stringify([p.id]),
+        dwdm: members.every((x) => equipmentType(x.name) !== "sw"),
+        labelAnchor: "top",
+        labelOffset: [0, 1.4],
+        label: members.length > 1 ? `${mapLabel(p.name).split("\n").pop()} (${members.length})` : mapLabel(p.name),
+        count: members.length,
+        ids: JSON.stringify(members.map((x) => x.id)),
       },
       geometry: { type: "Point" as const, coordinates: positions.get(p.id) ?? [p.lng, p.lat] },
       };
