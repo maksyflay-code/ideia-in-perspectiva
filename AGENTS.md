@@ -40,3 +40,4 @@ use the editor.
 - Update live map sources whenever they exist, without gating on isStyleLoaded(); pending tile loads must not discard Zabbix status updates.
 - Identify DWDM endpoints by padtec-/eci- names and show their links with a green, thicker line and moving canvas lightning symbols; decoration never establishes capacity or status, monitored unknown/down stop bolts, confirmed failure stays topmost red, and reduced motion hides bolts.
 - DWDM markers use separate online/down color tokens from switches while preserving Zabbix states and neutral unknown styling, so equipment types remain distinguishable without implying a new monitoring rule.
+- Marker labels stay short: switches drop the `sw-` prefix and show only the site name, DWDM markers keep the brand on its own line; popups always show the full technical name so Zabbix matching and identification are unaffected.

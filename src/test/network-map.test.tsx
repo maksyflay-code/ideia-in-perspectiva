@@ -109,6 +109,15 @@ describe("Equipamentos sobrepostos", () => {
       expect(mock.sources["pops"].data.features.map((f: any) => f.properties.state)).toEqual([state, state, state]);
     }
   });
+  it("escreve o nome do switch no mapa sem o prefixo sw", () => {
+    const net: Network = { ...network, pops: [...network.pops, { id: 3, name: "eci-jacuipe", city: "Jacuipe", lat: -12, lng: -39, notes: "" }] };
+    render(<NetworkMap network={net} channelId={null} />);
+    act(() => mock.handlers["load"]?.());
+    const labels = mock.sources["pops"].data.features.map((f: any) => f.properties.label);
+    expect(labels).toEqual(["jacuipe", "padtec\njacuipe", "eci\njacuipe"]);
+    act(() => mock.handlers["click:pops"]?.({ features: [mock.sources["pops"].data.features[0]] }));
+    expect(mock.html).toContain("sw-jacuipe");
+  });
   it("liga as linhas às posições visuais e anima raios só em DWDM ativo ou não monitorado", () => {
     const net: Network = {
       ...network,

@@ -11,6 +11,12 @@ export function equipmentType(name: string) {
   return "sw";
 }
 
+/** Marker label: switches show only the site name, DWDM keeps the brand on its own line. */
+export function mapLabel(name: string) {
+  if (equipmentType(name) === "sw") return name.replace(/^sw-/i, "");
+  return name.replace(/^(padtec|eci)-/i, "$1\n");
+}
+
 /** Screen-only displacement; both markers and fiber paths use these positions. */
 export function displayPositions(pops: Pop[], camera?: Camera) {
   const positions = new Map(pops.map((p) => [p.id, [p.lng, p.lat] as [number, number]]));
