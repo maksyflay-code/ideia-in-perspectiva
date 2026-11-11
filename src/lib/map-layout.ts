@@ -45,3 +45,13 @@ export function displayPositions(pops: Pop[], camera?: Camera) {
 export function isDwdmLink(from: Network["pops"][number], to: Network["pops"][number]) {
   return equipmentType(from.name) !== "sw" && equipmentType(to.name) !== "sw";
 }
+/** Splits the saved network into the switch map or the DWDM (Padtec/ECI) map without copying data. */
+export function filterNetwork(net: Network, kind: "sw" | "dwdm"): Network {
+  const pops = net.pops.filter((p) => (equipmentType(p.name) === "sw") === (kind === "sw"));
+  const ids = new Set(pops.map((p) => p.id));
+  return {
+    pops,
+    links: net.links.filter((l) => ids.has(l.from_pop) && ids.has(l.to_pop)),
+    channels: net.channels.filter((c) => [...c.primary_path, ...c.secondary_path].every((id) => ids.has(id))),
+  };
+}
