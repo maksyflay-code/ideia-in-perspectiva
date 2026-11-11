@@ -30,7 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
-- Map points within 22 screen pixels use a 24-pixel screen-space grid with original-size markers and outward labels; marker, popup and link positions share the display layout, recalculated on camera changes without altering saved coordinates, so colocated equipment stays close and accessible.
+- Map points within 22 screen pixels merge into one same-size marker at their screen centroid (worst Zabbix state, label with count); its click popup lists every member; links attach to that display position without altering saved coordinates.
 - Self-hosted on a Proxmox VM via Docker (NITRO_PRESET=node-server); never depend on Lovable Cloud or other hosted backends.
 - Storage is SQLite via Node's built-in `node:sqlite` in `src/server/db.server.ts`, imported dynamically so the Worker bundle never resolves it; schema is created with CREATE TABLE IF NOT EXISTS on startup.
 - Admin auth is a single env-configured user (ADMIN_USER/ADMIN_PASSWORD) with an HMAC-signed httpOnly cookie; every mutating server function must call requireAdmin().
