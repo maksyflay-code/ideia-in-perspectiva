@@ -110,7 +110,7 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
         )}
         <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
           <Suspense fallback={<div className="h-full w-full bg-muted" />}>
-            <NetworkMap key={kind} network={net} channelId={channelId} zabbix={zbx} />
+            <NetworkMap key={kind} kind={kind} network={net} channelId={channelId} zabbix={zbx} />
           </Suspense>
         </ClientOnly>
       </main>

@@ -99,10 +99,12 @@ export default function NetworkMap({
   network,
   channelId,
   zabbix,
+  kind = "sw",
 }: {
   network: Network;
   channelId: number | null;
   zabbix?: ZabbixStatus | undefined;
+  kind?: "sw" | "dwdm";
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -190,6 +192,22 @@ export default function NetworkMap({
         ctx.closePath(); ctx.fill(); ctx.stroke();
         m.addImage("fiber-bolt", ctx.getImageData(0, 0, 32, 40), { pixelRatio: 2 });
       }
+      const swCanvas = document.createElement("canvas");
+      swCanvas.width = 44; swCanvas.height = 30;
+      const swCtx = swCanvas.getContext("2d");
+      if (swCtx) {
+        // Switch glyph in white; registered as SDF so icon-color tints it by Zabbix state.
+        swCtx.fillStyle = "#fff";
+        swCtx.fillRect(2, 8, 40, 18);
+        swCtx.fillStyle = "#000";
+        for (let i = 0; i < 4; i++) swCtx.fillRect(6 + i * 7, 19, 4, 4);
+        swCtx.beginPath();
+        swCtx.moveTo(10, 11); swCtx.lineTo(13, 15); swCtx.lineTo(7, 15); swCtx.closePath();
+        swCtx.moveTo(20, 15); swCtx.lineTo(23, 11); swCtx.lineTo(17, 11); swCtx.closePath();
+        swCtx.moveTo(30, 11); swCtx.lineTo(33, 15); swCtx.lineTo(27, 15); swCtx.closePath();
+        swCtx.fill();
+        m.addImage("sw-icon", swCtx.getImageData(0, 0, 44, 30), { pixelRatio: 2, sdf: true });
+      }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
@@ -203,7 +221,16 @@ export default function NetworkMap({
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
+      if (kind === "sw" && swCtx)
+        m.addLayer({
+          id: "pops",
+          type: "symbol",
+          source: "pops",
+          layout: { "icon-image": "sw-icon", "icon-size": ["match", ["get", "state"], "down", 1.15, 1], "icon-allow-overlap": true },
+          paint: { "icon-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "icon-halo-color": outline, "icon-halo-width": 2 },
+        });
+      else
+        m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
