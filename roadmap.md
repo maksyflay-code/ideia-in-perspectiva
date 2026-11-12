@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Substituir desenhos rejeitados por roteador clássico nos switches e multiplexador óptico no DWDM; preservar estados e linhas.
 - [x] Igualar espessura das linhas dos switches à do DWDM e desenhar chassi óptico preservando cores e raios; 11 testes passaram, desenho conferido no tamanho real. Conferência com pontos DWDM reais depende dos dados presentes apenas na VM.
 - [x] Incluir botão de ramificação Irecê–Cafarnaum com OSC 169620, sem duplicar ou substituir monitoramento; 24 testes passaram e botão admin conferido.
 - [ ] Executar conexão Irecê–Cafarnaum e verificar leitura OSC na VM após atualização; Zabbix e POPs reais indisponíveis nesta prévia.
