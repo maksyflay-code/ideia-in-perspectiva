@@ -87,6 +87,8 @@ const linkSchema = z
     distance_km: z.number().min(0).max(100000),
     zabbix_host: z.string().max(200).default(""),
     zabbix_item: z.string().max(200).default(""),
+    monitor_kind: z.enum(["interface", "padtec_loss"]).default("interface"),
+    optical_down_value: z.enum(["", "0", "1"]).default(""),
   })
   .refine((v) => v.from_pop !== v.to_pop, { message: "Origem e destino devem ser diferentes" });
 
@@ -95,14 +97,29 @@ export const saveLink = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await auth()).requireAdmin();
     const d = await db();
+    if (data.monitor_kind === "padtec_loss") {
+      const { PADTEC_MONITOR_HOST } = await import("./optical-status");
+      if (data.zabbix_host !== PADTEC_MONITOR_HOST || !/^\d+$/.test(data.zabbix_item) || !data.optical_down_value)
+        throw new Error("Selecione a Line Padtec e confirme o valor de perda de sinal");
+      const endpoints = [data.from_pop, data.to_pop].map((id) => d.prepare("SELECT name FROM pops WHERE id=?").get(id) as { name: string } | undefined);
+      if (!endpoints.every((p) => p?.name.startsWith("padtec-"))) throw new Error("Alarme Padtec exige dois equipamentos Padtec");
+      const zs = await import("@/server/zabbix.server");
+      const items = await zs.listOpticalItems();
+      const selected = items.find((i) => i.itemid === data.zabbix_item);
+      if (!selected) throw new Error("Alarme Loss da Line não encontrado no Zabbix");
+      const source = endpoints[0];
+      const target = endpoints[1];
+      if (!source || !target || ![source.name, target.name].includes(zs.padtecSlug(zs.padtecSite(selected.name) ?? "")))
+        throw new Error("O alarme selecionado não pertence a nenhum dos equipamentos desta ligação");
+    }
     if (data.id)
       d.prepare(
-        "UPDATE links SET from_pop=?, to_pop=?, distance_km=?, zabbix_host=?, zabbix_item=? WHERE id=?",
-      ).run(data.from_pop, data.to_pop, data.distance_km, data.zabbix_host, data.zabbix_item, data.id);
+        "UPDATE links SET from_pop=?, to_pop=?, distance_km=?, zabbix_host=?, zabbix_item=?, monitor_kind=?, optical_down_value=? WHERE id=?",
+      ).run(data.from_pop, data.to_pop, data.distance_km, data.zabbix_host, data.zabbix_item, data.monitor_kind, data.monitor_kind === "padtec_loss" ? data.optical_down_value : "", data.id);
     else
       d.prepare(
-        "INSERT INTO links (from_pop, to_pop, distance_km, zabbix_host, zabbix_item) VALUES (?,?,?,?,?)",
-      ).run(data.from_pop, data.to_pop, data.distance_km, data.zabbix_host, data.zabbix_item);
+        "INSERT INTO links (from_pop, to_pop, distance_km, zabbix_host, zabbix_item, monitor_kind, optical_down_value) VALUES (?,?,?,?,?,?,?)",
+      ).run(data.from_pop, data.to_pop, data.distance_km, data.zabbix_host, data.zabbix_item, data.monitor_kind, data.monitor_kind === "padtec_loss" ? data.optical_down_value : "");
     return { ok: true };
   });
 
@@ -147,6 +164,12 @@ export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async (
   const z = await import("@/server/zabbix.server");
   const links = d.prepare("SELECT * FROM links ORDER BY id").all() as Link[];
   return z.getStatus(names, links);
+});
+
+export const getPadtecOpticalItems = createServerFn({ method: "GET" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const zs = await import("@/server/zabbix.server");
+  return zs.listOpticalItems();
 });
 
 export const PENDING_NOTE = "Localização pendente — ajuste latitude/longitude";

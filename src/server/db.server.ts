@@ -50,6 +50,10 @@ async function open(): Promise<Db> {
       secondary_path TEXT NOT NULL DEFAULT '[]'
     );
   `);
+  // Additive upgrade preserves every existing POP, channel and interface link.
+  const columns = new Set((db.prepare("PRAGMA table_info(links)").all() as { name: string }[]).map((c) => c.name));
+  if (!columns.has("monitor_kind")) db.exec("ALTER TABLE links ADD COLUMN monitor_kind TEXT NOT NULL DEFAULT 'interface'");
+  if (!columns.has("optical_down_value")) db.exec("ALTER TABLE links ADD COLUMN optical_down_value TEXT NOT NULL DEFAULT ''");
   const count = (db.prepare("SELECT COUNT(*) AS n FROM pops").get() as { n: number }).n;
   if (count === 0 && process.env["SEED_DEMO"] !== "0") seed(db);
   return db;

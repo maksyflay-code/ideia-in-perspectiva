@@ -1,6 +1,7 @@
 // Read-only Zabbix client. Credentials come from ZABBIX_URL / ZABBIX_USER / ZABBIX_PASSWORD.
 import type { Link } from "@/lib/network.types";
 import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
+import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
 export type PopStatus = {
   state: "ok" | "warn" | "down" | "unknown";
   problems: { name: string; severity: number }[];
@@ -46,7 +47,7 @@ async function call(c: NonNullable<ReturnType<typeof cfg>>, method: string, para
 export async function getStatus(names: string[], links: Link[] = []): Promise<ZabbixStatus> {
   const c = cfg();
   if (!c) return { enabled: false, byName: {} };
-  const key = JSON.stringify([[...names].sort(), links.map((l) => [l.id, l.zabbix_host, l.zabbix_item])]);
+  const key = JSON.stringify([[...names].sort(), links.map((l) => [l.id, l.zabbix_host, l.zabbix_item, l.monitor_kind, l.optical_down_value])]);
   if (cache && cache.key === key && Date.now() - cache.at < 30000) return cache.value;
   try {
     const hosts = (await call(c, "host.get", {
@@ -102,7 +103,9 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
           selectHosts: ["host"],
         })) as InterfaceItem[];
         const byId = new Map(items.map((i) => [i.itemid, i]));
-        for (const l of monitored) byLink[String(l.id)] = interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
+        for (const l of monitored) byLink[String(l.id)] = l.monitor_kind === "padtec_loss"
+          ? opticalStatus(byId.get(l.zabbix_item.trim()), l)
+          : interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
       } catch {
         for (const l of monitored) byLink[String(l.id)] = { state: "unknown", message: "Não foi possível consultar a porta no Zabbix" };
       }
@@ -179,4 +182,19 @@ export async function listPadtecSites() {
   const sites = new Map<string, string>();
   for (const t of r.triggers) sites.set(t.pop, t.site);
   return [...sites].map(([host, site]) => ({ host, site }));
+}
+
+export type OpticalItem = InterfaceItem & { name: string; valuemap: { mappings?: { value: string; newvalue: string }[] } };
+export async function listOpticalItems(): Promise<OpticalItem[]> {
+  const c = cfg();
+  if (!c) throw new Error("Zabbix não configurado na VM");
+  const hosts = (await call(c, "host.get", { output: ["hostid"], filter: { host: [PADTEC_HOST] } })) as { hostid: string }[];
+  const host = hosts[0];
+  if (!host) throw new Error("Host Padtec - Servidor não encontrado");
+  const items = (await call(c, "item.get", {
+    output: ["itemid", "name", "key_", "lastvalue", "lastclock", "status", "state"],
+    hostids: [host.hostid], selectHosts: ["host"], selectValueMap: "extend",
+    search: { key_: "alarmLossLine" },
+  })) as OpticalItem[];
+  return items.filter((i) => opticalLossKey.test(i.key_)).sort((a, b) => a.name.localeCompare(b.name));
 }
