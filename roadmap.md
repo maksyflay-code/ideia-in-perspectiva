@@ -1,5 +1,6 @@
 # Tarefas
-- [ ] Adicionar importação das 11 ligações do anel ECI confirmado nas imagens, sem duplicar ligações nem alterar monitoramento existente; validar gravação e mapa.
+- [x] Adicionar importação das 11 ligações do anel ECI confirmado nas imagens, sem duplicar ligações nem alterar monitoramento existente; 15 testes passaram, gravação/releitura e filtro DWDM validados, botão conferido com admin.
+- [ ] Executar a importação do anel ECI na VM após atualizar; os 11 POPs reais não estão disponíveis nesta prévia.
 - [x] Substituir listas de três ligações por consulta de todas as referências Padtec/ECI na VM, com revisão dos circuitos e pendências sem destino.
 - [x] Validar descoberta, duplicatas e gravação/releitura da importação selecionada; 53 testes passaram e botões conferidos com sessão admin.
 - [ ] Conferir destinos reais e importar na VM; bloqueado pelo acesso ao Zabbix disponível somente na VM.
