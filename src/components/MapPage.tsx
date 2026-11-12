@@ -63,14 +63,6 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
             )}
           </div>
         )}
-        {kind === "dwdm" && (
-          <div className="space-y-1 border-b px-4 py-2 text-xs text-muted-foreground" aria-label="Legenda das ligações DWDM">
-            <p className="font-mono text-[11px] uppercase tracking-wider">Ligações</p>
-            <p className="flex items-center gap-2"><span className="inline-block h-1 w-6 rounded bg-dwdm" />Monitorada · fica vermelha quando cai</p>
-            <p className="flex items-center gap-2"><span className="inline-block w-6 border-t-[3px] border-dashed border-dwdm opacity-70" />Sem monitoramento · não fica vermelha</p>
-            <p className="flex items-center gap-2"><span className="inline-block h-1 w-6 rounded bg-destructive" />Caída</p>
-          </div>
-        )}
         <div className="flex-1 overflow-auto p-3">
           <p className="mb-2 px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Canais</p>
           <button

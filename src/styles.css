@@ -34,7 +34,6 @@
   --color-signal: var(--signal);
   --color-standby: var(--standby);
   --color-online: var(--online);
-  --color-dwdm: var(--dwdm);
   --color-dwdm-online: var(--dwdm-online);
   --color-dwdm-down: var(--dwdm-down);
   --color-map-link: var(--map-link);
