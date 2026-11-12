@@ -196,3 +196,29 @@ export const importZabbixHosts = createServerFn({ method: "POST" })
     }
     return { found: hosts.length, added };
   });
+
+export const ECI_PRESET_LINKS = [
+  { from: "eci-cafarnaum", to: "eci-fsa", host: "eci-cafarnaum", item: "100168" },
+  { from: "eci-cafarnaum", to: "eci-jacobina", host: "eci-cafarnaum", item: "100169" },
+  { from: "eci-jacobina", to: "eci-serrinha", host: "eci-jacobina", item: "135147" },
+] as const;
+
+export const importEciLinks = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const d = await db();
+  const idOf = (n: string) => (d.prepare("SELECT id FROM pops WHERE name=?").get(n) as { id: number } | undefined)?.id;
+  const ins = d.prepare(
+    "INSERT INTO links (from_pop, to_pop, distance_km, zabbix_host, zabbix_item, monitor_kind, optical_down_value) VALUES (?,?,0,?,?,'interface','')",
+  );
+  let added = 0, existed = 0;
+  const missing: string[] = [];
+  for (const l of ECI_PRESET_LINKS) {
+    const a = idOf(l.from), b = idOf(l.to);
+    if (!a || !b) { missing.push(!a ? l.from : l.to); continue; }
+    const dup = d.prepare("SELECT 1 FROM links WHERE (from_pop=? AND to_pop=?) OR (from_pop=? AND to_pop=?)").get(a, b, b, a);
+    if (dup) { existed++; continue; }
+    ins.run(a, b, l.host, l.item);
+    added++;
+  }
+  return { added, existed, missing: [...new Set(missing)] };
+});
