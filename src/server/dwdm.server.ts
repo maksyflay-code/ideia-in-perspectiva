@@ -2,6 +2,21 @@ import type { Db } from "./db.server";
 import { discoverDwdm, planDwdmImport, type DwdmChoice, type DwdmKind, type DiscoveryPop } from "@/lib/dwdm-discovery";
 import { listDwdmItems } from "./zabbix.server";
 import { planEciRing } from "@/lib/eci-ring";
+import { planEciMonitoring, type EciMonitoringLink } from "@/lib/eci-monitoring";
+
+export async function applyEciMonitoring(d: Db) {
+  const items = await listDwdmItems("eci");
+  d.exec("BEGIN IMMEDIATE");
+  try {
+    const pops = d.prepare("SELECT id, name, city FROM pops ORDER BY name").all() as DiscoveryPop[];
+    const links = d.prepare("SELECT * FROM links ORDER BY id").all() as EciMonitoringLink[];
+    const { updates, ...counts } = planEciMonitoring(pops, links, items);
+    const update = d.prepare("UPDATE links SET zabbix_host=?, zabbix_item=?, monitor_kind='interface', optical_down_value='' WHERE id=?");
+    for (const l of updates) update.run(l.host, l.item, l.id);
+    d.exec("COMMIT");
+    return { applied: updates.length, ...counts };
+  } catch (e) { d.exec("ROLLBACK"); throw e; }
+}
 
 export function importEciRing(d: Db) {
   d.exec("BEGIN IMMEDIATE");

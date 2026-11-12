@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Adicionar botão de aplicação dos IDs OSC confirmados ao anel ECI, validando itens na VM e preservando monitoramentos existentes; testar persistência e controle.
 - [x] Adicionar importação das 11 ligações do anel ECI confirmado nas imagens, sem duplicar ligações nem alterar monitoramento existente; 15 testes passaram, gravação/releitura e filtro DWDM validados, botão conferido com admin.
 - [ ] Executar a importação do anel ECI na VM após atualizar; os 11 POPs reais não estão disponíveis nesta prévia.
 - [x] Substituir listas de três ligações por consulta de todas as referências Padtec/ECI na VM, com revisão dos circuitos e pendências sem destino.
