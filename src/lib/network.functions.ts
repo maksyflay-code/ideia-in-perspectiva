@@ -217,6 +217,12 @@ export const applyConfirmedEciMonitoring = createServerFn({ method: "POST" }).ha
   return service.applyEciMonitoring(await db());
 });
 
+export const connectConfirmedIrece = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/dwdm.server");
+  return service.connectIrece(await db());
+});
+
 export const importDwdmLinks = createServerFn({ method: "POST" })
   .inputValidator(z.object({ kind: z.enum(["padtec", "eci"]), choices: z.array(z.object({ key: z.string().min(1).max(500), to: z.string().min(1).max(80) })).min(1).max(5000), confirmed: z.literal(true) }))
   .handler(async ({ data }) => {
