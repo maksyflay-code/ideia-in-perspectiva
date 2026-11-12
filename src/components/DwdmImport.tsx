@@ -77,7 +77,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
   return <div className="space-y-3">
     <div className="flex flex-wrap gap-2">
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={saveRing}><Download />Importar anel ECI (11 ligações)</Button>
-      <Button type="button" variant="outline" size="sm" disabled={busy} onClick={savePadtecRings}><Download />Importar anéis Padtec (37 ligações)</Button>
+      <Button type="button" variant="outline" size="sm" disabled={busy} onClick={savePadtecRings}><Download />Importar anéis Padtec (41 ligações)</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={applyMonitoring}><Activity />Aplicar monitoramento OSC do anel ECI</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={addIrece}><Activity />Conectar Irecê a Cafarnaum com OSC</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => consult("padtec")}><Search />Consultar todas as saídas Padtec</Button>
