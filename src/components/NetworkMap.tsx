@@ -200,9 +200,7 @@ export default function NetworkMap({
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
       m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 2.5, "line-dasharray": [1, 3] } });
-      m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["all", ["==", ["get", "dwdm"], true], ["!=", ["get", "state"], "unmonitored"]], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
-      // DWDM links without a loss alarm: dashed so it is clear they never turn red.
-      m.addLayer({ id: "dwdm-unwatched", type: "line", source: "links", filter: ["all", ["==", ["get", "dwdm"], true], ["==", ["get", "state"], "unmonitored"]], paint: { "line-color": fiber, "line-width": 3, "line-opacity": 0.7, "line-dasharray": [2, 1.5] } });
+      m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
