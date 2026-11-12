@@ -177,8 +177,6 @@ export default function NetworkMap({
       const outline = cssVar("--map-outline");
       const fiber = cssVar("--dwdm");
       const flash = cssVar("--dwdm-flash");
-      const dwdmOnline = cssVar("--dwdm-online");
-      const dwdmDown = cssVar("--dwdm-down");
       const canvas = document.createElement("canvas");
       canvas.width = 32; canvas.height = 40;
       const ctx = canvas.getContext("2d");
@@ -205,7 +203,7 @@ export default function NetworkMap({
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
-      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["case", ["==", ["get", "dwdm"], true], ["match", ["get", "state"], "ok", dwdmOnline, "down", dwdmDown, "warn", standby, "unknown", neutral, signal], ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal]], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
