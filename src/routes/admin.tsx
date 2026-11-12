@@ -6,6 +6,7 @@ import { PENDING_NOTE, deleteItem, importZabbixHosts, login, logout, saveChannel
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
+import Brand from "@/components/Brand";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -52,7 +53,8 @@ function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-6">
-        <h1 className="font-mono text-sm font-bold tracking-widest text-primary">MAPA DWDM · ADMIN</h1>
+        <div className="-mx-6 -mt-6 mb-6 rounded-t-lg bg-primary px-6 py-5 text-primary-foreground"><Brand /></div>
+        <h1 className="text-sm font-semibold text-primary">Mapa DWDM · Admin</h1>
         <input name="user" placeholder="Usuário" className={input} required />
         <input name="password" type="password" placeholder="Senha" className={input} required />
         {err && <p className="text-sm text-destructive">{err}</p>}
@@ -73,10 +75,11 @@ function Panel({ user }: { user: string }) {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md bg-primary p-4 text-primary-foreground">
         <div>
-          <h1 className="font-mono text-sm font-bold tracking-widest text-primary">PAINEL ADMIN</h1>
-          <p className="text-xs text-muted-foreground">Conectado como {user}</p>
+          <Brand />
+          <h1 className="mt-3 text-sm font-semibold">Painel Admin</h1>
+          <p className="text-xs text-primary-foreground/75">Conectado como {user}</p>
         </div>
         <div className="flex gap-2">
           <Link to="/" className={ghost}>Ver mapa</Link>
