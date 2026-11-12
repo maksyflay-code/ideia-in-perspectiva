@@ -38,6 +38,7 @@
   --color-dwdm-down: var(--dwdm-down);
   --color-map-link: var(--map-link);
   --color-brand-light: var(--brand-light);
+  --color-login-shade: var(--login-shade);
 }
 
 /* Official IVI panel palette; operational map tokens remain unchanged. */
@@ -58,6 +59,7 @@
   --accent: hsl(207 44% 92%);
   --accent-foreground: hsl(213 58% 32%);
   --brand-light: hsl(207 60% 65%);
+  --login-shade: hsl(213 58% 12% / 30%);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
   --border: hsl(214 20% 88%);

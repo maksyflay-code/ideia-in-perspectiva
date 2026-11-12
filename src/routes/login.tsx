@@ -4,6 +4,8 @@ import { useState, type FormEvent } from "react";
 import { login } from "@/lib/network.functions";
 import Brand from "@/components/Brand";
 import { Button } from "@/components/ui/button";
+import loginBackground from "@/assets/ivi-login-network.jpg";
+import { ArrowRight, LockKeyhole } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -39,15 +41,19 @@ function LoginPage() {
     navigate({ to: "/" });
   }
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-6">
-        <div className="-mx-6 -mt-6 mb-6 rounded-t-lg bg-primary px-6 py-5 text-primary-foreground"><Brand /></div>
-        <h1 className="text-base font-semibold text-primary">Rede IVI Telecom</h1>
-        <p className="text-xs text-muted-foreground">Acesso restrito. Entre com seu usuário e senha.</p>
-        <input name="user" aria-label="Usuário" placeholder="Usuário" autoComplete="username" className={input} required />
-        <input name="password" aria-label="Senha" type="password" placeholder="Senha" autoComplete="current-password" className={input} required />
+    <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden p-5 sm:p-8 lg:justify-end lg:px-24">
+      <img src={loginBackground} alt="" width={1920} height={1088} fetchPriority="high" className="absolute inset-0 -z-20 h-full w-full object-cover object-left" />
+      <div className="absolute inset-0 -z-10 bg-login-shade" />
+      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-lg border border-card/70 bg-card/95 p-7 backdrop-blur-sm sm:p-8">
+        <div className="-mx-7 -mt-7 mb-7 rounded-t-lg bg-primary px-7 py-6 text-primary-foreground sm:-mx-8 sm:-mt-8 sm:px-8"><Brand /></div>
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-xs font-medium text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Acesso restrito</div>
+          <h1 className="text-xl font-semibold text-primary">Rede IVI Telecom</h1>
+        </div>
+        <div className="space-y-2"><label htmlFor="login-user" className="text-sm font-medium">Usuário</label><input id="login-user" name="user" aria-label="Usuário" placeholder="Seu usuário" autoComplete="username" className={input} required /></div>
+        <div className="space-y-2"><label htmlFor="login-password" className="text-sm font-medium">Senha</label><input id="login-password" name="password" aria-label="Senha" type="password" placeholder="Sua senha" autoComplete="current-password" className={input} required /></div>
         {err && <p className="text-sm text-destructive">{err}</p>}
-        <Button className="w-full" disabled={busy}>Entrar</Button>
+        <Button className="h-10 w-full" disabled={busy}>Entrar <ArrowRight className="h-4 w-4" /></Button>
       </form>
     </div>
   );
