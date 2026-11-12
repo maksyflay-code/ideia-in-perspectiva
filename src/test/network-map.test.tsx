@@ -8,6 +8,7 @@ const mock = vi.hoisted(() => ({
   sources: {} as Record<string, any>,
   html: "",
   layers: {} as Record<string, any>,
+  images: {} as Record<string, boolean>,
   paints: vi.fn(),
   styleLoaded: true,
 }));
@@ -21,6 +22,7 @@ vi.mock("maplibre-gl", () => ({
       else if (callback) mock.handlers[`${event}:${layer}`] = callback;
     }
     addControl() {}
+    addImage(id: string) { mock.images[id] = true; }
     addSource(id: string, source: any) { mock.sources[id] = { ...source, setData(data: any) { this.data = data; } }; }
     addLayer(layer: any) { mock.layers[layer.id] = layer; }
     getLayer(id: string) { return mock.layers[id]; }
@@ -51,7 +53,7 @@ const network: Network = {
 describe("Equipamentos sobrepostos", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    mock.handlers = {}; mock.sources = {}; mock.html = ""; mock.layers = {}; mock.paints.mockClear();
+    mock.handlers = {}; mock.sources = {}; mock.html = ""; mock.layers = {}; mock.images = {}; mock.paints.mockClear();
     mock.styleLoaded = true;
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
@@ -165,5 +167,43 @@ describe("Equipamentos sobrepostos", () => {
     render(<NetworkMap network={network} channelId={null} />);
     act(() => mock.handlers["load"]?.());
     expect(request).not.toHaveBeenCalled();
+  });
+});
+
+describe("Ícone de switch", () => {
+  const fakeCtx = {
+    fillStyle: "",
+    strokeStyle: "",
+    lineWidth: 0,
+    fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
+    getImageData() {
+      const m = /rgb\((\d+), (\d+), (\d+)\)/.exec(this.fillStyle);
+      const [r, g, b] = m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [1, 2, 3];
+      return { data: new Uint8ClampedArray([r, g, b, 255]), width: 1, height: 1 };
+    },
+  };
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    mock.handlers = {}; mock.sources = {}; mock.html = ""; mock.layers = {}; mock.images = {}; mock.paints.mockClear();
+    mock.styleLoaded = true;
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(fakeCtx as any);
+    vi.spyOn(window, "getComputedStyle").mockReturnValue({
+      getPropertyValue: (name: string) => (name === "--destructive" ? "rgb(200, 30, 30)" : "rgb(1, 2, 3)"),
+    } as any);
+  });
+  it("mapa de switches usa símbolo de switch tingido de vermelho no estado crítico", () => {
+    render(<NetworkMap network={network} channelId={null} kind="sw" />);
+    act(() => mock.handlers["load"]?.());
+    expect(mock.images["sw-icon"]).toBe(true);
+    const layer = mock.layers["pops"];
+    expect(layer.type).toBe("symbol");
+    expect(layer.layout["icon-image"]).toBe("sw-icon");
+    expect(layer.paint["icon-color"]).toEqual(["match", ["get", "state"], "ok", "rgb(1, 2, 3)", "warn", "rgb(1, 2, 3)", "down", "rgb(200, 30, 30)", "unknown", "rgb(1, 2, 3)", "rgb(1, 2, 3)"]);
+  });
+  it("mapa DWDM mantém o ponto redondo", () => {
+    render(<NetworkMap network={network} channelId={null} kind="dwdm" />);
+    act(() => mock.handlers["load"]?.());
+    expect(mock.layers["pops"].type).toBe("circle");
   });
 });
