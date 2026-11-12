@@ -176,7 +176,11 @@ describe("Ícone de switch", () => {
     strokeStyle: "",
     lineWidth: 0,
     fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {},
-    getImageData: () => ({ data: new Uint8ClampedArray(4), width: 1, height: 1 }),
+    getImageData() {
+      const m = /rgb\((\d+), (\d+), (\d+)\)/.exec(this.fillStyle);
+      const [r, g, b] = m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [1, 2, 3];
+      return { data: new Uint8ClampedArray([r, g, b, 255]), width: 1, height: 1 };
+    },
   };
   beforeEach(() => {
     vi.restoreAllMocks();
