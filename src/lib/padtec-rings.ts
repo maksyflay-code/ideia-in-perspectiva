@@ -38,6 +38,17 @@ export const PADTEC_SEGMENT_MONITORING: { a: string; b: string; item: string; ke
   { a: "picos", b: "caninde", item: "141611", key: "cardPart2702_alarmLossLine1.[1292]" },
   { a: "caninde", b: "sobral", item: "157291", key: "cardPart2702_alarmLossLine1.[1297]" },
   { a: "sobral", b: "fortaleza", item: "157292", key: "cardPart2702_alarmLossLine2.[1297]" },
+  // Direct neighbours whose two ends show matching chromatic dispersion (same fiber span).
+  { a: "juazeiro", b: "vilanova", item: "162237", key: "cardPart2762_alarmLossLine2.[763]" },
+  { a: "vilanova", b: "juazeirodonorte", item: "162222", key: "cardPart2762_alarmLossLine1.[763]" },
+  { a: "juazeirodonorte", b: "sousa", item: "162225", key: "cardPart2762_alarmLossLine1.[755]" },
+  { a: "sousa", b: "moradanova", item: "162223", key: "cardPart2762_alarmLossLine1.[770]" },
+  { a: "moradanova", b: "fortaleza", item: "162227", key: "cardPart2762_alarmLossLine1.[776]" },
+  { a: "moradanova", b: "mossoro", item: "162242", key: "cardPart2762_alarmLossLine2.[776]" },
+  { a: "telxius", b: "candeias", item: "162221", key: "cardPart2762_alarmLossLine1.[775]" },
+  { a: "serrinha", b: "tucano", item: "167509", key: "cardPart2545_alarmLossLine1.[668]" },
+  { a: "fsa", b: "serrinha", item: "168917", key: "cardPart2545_alarmLossLine1.[193]" },
+  { a: "euclides", b: "cicero", item: "164627", key: "cardPart2762_alarmLossLine1.[774]" },
 ];
 export const PADTEC_LOSS_DOWN_VALUE = "1";
 
