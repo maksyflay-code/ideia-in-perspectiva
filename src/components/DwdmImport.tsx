@@ -24,7 +24,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
     setBusy(true); setMsg("");
     try {
       const r = await padtecRingsFn();
-      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · novas ligações sem monitoramento`);
+      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · ${r.monitored} com alarme de perda de sinal`);
       onChange();
     } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível importar os anéis Padtec"); }
     finally { setBusy(false); }

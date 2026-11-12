@@ -23,7 +23,7 @@ describe("Padtec rings", () => {
       { from: id("juazeiro"), to: id("picos"), item: "141616" },
       { from: id("picos"), to: id("caninde"), item: "141611" },
       { from: id("caninde"), to: id("sobral"), item: "157291" },
-      { from: id("sobral"), to: id("fortaleza-globenet"), item: "157292" },
+      { from: id("sobral"), to: id("globenet"), item: "157292" },
     ]);
   });
   it("skips existing links in either direction", () => {
