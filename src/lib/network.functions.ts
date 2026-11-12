@@ -211,6 +211,12 @@ export const importConfirmedEciRing = createServerFn({ method: "POST" }).handler
   return service.importEciRing(await db());
 });
 
+export const importConfirmedPadtecRings = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/dwdm.server");
+  return service.importPadtecRings(await db());
+});
+
 export const applyConfirmedEciMonitoring = createServerFn({ method: "POST" }).handler(async () => {
   await (await auth()).requireAdmin();
   const service = await import("@/server/dwdm.server");
