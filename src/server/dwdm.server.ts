@@ -2,6 +2,7 @@ import type { Db } from "./db.server";
 import { discoverDwdm, planDwdmImport, type DwdmChoice, type DwdmKind, type DiscoveryPop } from "@/lib/dwdm-discovery";
 import { listDwdmItems } from "./zabbix.server";
 import { planEciRing } from "@/lib/eci-ring";
+import { planPadtecRings } from "@/lib/padtec-rings";
 import { IRECE_OSC_SEGMENT, planEciMonitoring, type EciMonitoringLink } from "@/lib/eci-monitoring";
 
 export async function connectIrece(d: Db) {
@@ -40,6 +41,19 @@ export async function applyEciMonitoring(d: Db) {
     for (const l of updates) update.run(l.host, l.item, l.id);
     d.exec("COMMIT");
     return { applied: updates.length, ...counts };
+  } catch (e) { d.exec("ROLLBACK"); throw e; }
+}
+
+export function importPadtecRings(d: Db) {
+  d.exec("BEGIN IMMEDIATE");
+  try {
+    const pops = d.prepare("SELECT id, name, city FROM pops ORDER BY name").all() as DiscoveryPop[];
+    const existing = d.prepare("SELECT from_pop, to_pop FROM links").all() as { from_pop: number; to_pop: number }[];
+    const { planned, existed } = planPadtecRings(pops, existing);
+    const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0,'','','interface','')");
+    for (const l of planned) ins.run(l.from, l.to);
+    d.exec("COMMIT");
+    return { added: planned.length, existed };
   } catch (e) { d.exec("ROLLBACK"); throw e; }
 }
 
