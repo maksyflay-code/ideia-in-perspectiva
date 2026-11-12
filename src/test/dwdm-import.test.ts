@@ -19,7 +19,7 @@ describe("SQLite reviewed DWDM import", () => {
     sqlite.exec("INSERT INTO links VALUES (1,2,1,20,'eci-bonito','123','interface','')");
     const d = sqlite as unknown as Db;
     expect(importEciRing(d)).toEqual({ added: 10, existed: 1, unmonitored: 10 });
-    const net = { pops: sqlite.prepare("SELECT * FROM pops").all(), links: sqlite.prepare("SELECT * FROM links").all(), channels: [] } as Network;
+    const net = { pops: sqlite.prepare("SELECT * FROM pops").all(), links: sqlite.prepare("SELECT * FROM links").all(), channels: [] } as unknown as Network;
     expect(filterNetwork(net, "dwdm").links).toHaveLength(11);
     expect(net.pops).toHaveLength(11);
     expect({ ...sqlite.prepare("SELECT * FROM links WHERE id=1").get() }).toMatchObject({ distance_km: 20, zabbix_host: "eci-bonito", zabbix_item: "123" });
