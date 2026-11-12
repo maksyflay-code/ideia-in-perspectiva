@@ -2,7 +2,9 @@ import type { Db } from "./db.server";
 import { discoverDwdm, planDwdmImport, type DwdmChoice, type DwdmKind, type DiscoveryPop } from "@/lib/dwdm-discovery";
 import { listDwdmItems } from "./zabbix.server";
 import { planEciRing } from "@/lib/eci-ring";
-import { planPadtecRings } from "@/lib/padtec-rings";
+import { planPadtecRings, PADTEC_SEGMENT_MONITORING, PADTEC_LOSS_DOWN_VALUE } from "@/lib/padtec-rings";
+import { listOpticalItems } from "./zabbix.server";
+import { PADTEC_MONITOR_HOST } from "@/lib/optical-status";
 import { IRECE_OSC_SEGMENT, planEciMonitoring, type EciMonitoringLink } from "@/lib/eci-monitoring";
 
 export async function connectIrece(d: Db) {
@@ -44,16 +46,25 @@ export async function applyEciMonitoring(d: Db) {
   } catch (e) { d.exec("ROLLBACK"); throw e; }
 }
 
-export function importPadtecRings(d: Db) {
+export async function importPadtecRings(d: Db) {
+  // Validate the confirmed loss alarms live before touching the database.
+  const live = await listOpticalItems();
+  for (const m of PADTEC_SEGMENT_MONITORING)
+    if (!live.some((i) => i.itemid === m.item && i.key_ === m.key))
+      throw new Error(`Nenhuma ligação criada. Alarme ${m.item} (${m.a}–${m.b}) não encontrado no Padtec - Servidor`);
   d.exec("BEGIN IMMEDIATE");
   try {
     const pops = d.prepare("SELECT id, name, city FROM pops ORDER BY name").all() as DiscoveryPop[];
     const existing = d.prepare("SELECT from_pop, to_pop FROM links").all() as { from_pop: number; to_pop: number }[];
-    const { planned, existed } = planPadtecRings(pops, existing);
+    const { planned, existed, monitoring } = planPadtecRings(pops, existing);
     const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0,'','','interface','')");
     for (const l of planned) ins.run(l.from, l.to);
+    // Only fill links that have no monitoring yet; never overwrite an existing configuration.
+    const mon = d.prepare("UPDATE links SET zabbix_host=?, zabbix_item=?, monitor_kind='padtec_loss', optical_down_value=? WHERE ((from_pop=? AND to_pop=?) OR (from_pop=? AND to_pop=?)) AND trim(zabbix_item)=''");
+    let monitored = 0;
+    for (const m of monitoring) monitored += Number(mon.run(PADTEC_MONITOR_HOST, m.item, PADTEC_LOSS_DOWN_VALUE, m.from, m.to, m.to, m.from).changes);
     d.exec("COMMIT");
-    return { added: planned.length, existed };
+    return { added: planned.length, existed, monitored };
   } catch (e) { d.exec("ROLLBACK"); throw e; }
 }
 

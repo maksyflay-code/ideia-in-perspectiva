@@ -12,6 +12,7 @@ const SITES: Record<string, string[]> = {
   vilanova: ["vilanova", "vln"], juazeirodonorte: ["juazeirodonorte", "jne"], sousa: ["sousa", "sza"],
   moradanova: ["moradanova", "mnv"], mossoro: ["mossoro", "mro"], fortaleza: ["globenet", "fortalezaglobenet", "fla"],
   santaluzia: ["santaluzia", "slz"],
+  picos: ["picos", "pcz"], caninde: ["caninde"], sobral: ["sobral"],
 };
 export const PADTEC_RING_SEGMENTS: [string, string][] = [
   ["telxius", "candeias"], ["telxius", "bastiao"], ["candeias", "jacuipe"], ["jacuipe", "fsa"], ["fsa", "serrinha"],
@@ -27,10 +28,22 @@ export const PADTEC_RING_SEGMENTS: [string, string][] = [
   ["juazeiro", "vilanova"], ["vilanova", "juazeirodonorte"], ["juazeirodonorte", "sousa"], ["sousa", "moradanova"],
   ["sousa", "santaluzia"], ["moradanova", "fortaleza"], ["moradanova", "mossoro"], ["mossoro", "fortaleza"],
   ["mossoro", "santaluzia"], ["santaluzia", "pauloafonso"],
+  // TM800G circuit pairs matched by chromatic dispersion on both ends; Sobral–Fortaleza admin-confirmed.
+  ["juazeiro", "picos"], ["picos", "caninde"], ["caninde", "sobral"], ["sobral", "fortaleza"],
 ];
+
+/** Loss-of-signal alarms (Padtec - Servidor) for segments; 0 = no alarm while the line carries signal. */
+export const PADTEC_SEGMENT_MONITORING: { a: string; b: string; item: string; key: string }[] = [
+  { a: "juazeiro", b: "picos", item: "141616", key: "cardPart2702_alarmLossLine1.[1320]" },
+  { a: "picos", b: "caninde", item: "141611", key: "cardPart2702_alarmLossLine1.[1292]" },
+  { a: "caninde", b: "sobral", item: "157291", key: "cardPart2702_alarmLossLine1.[1297]" },
+  { a: "sobral", b: "fortaleza", item: "157292", key: "cardPart2702_alarmLossLine2.[1297]" },
+];
+export const PADTEC_LOSS_DOWN_VALUE = "1";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
+export type PadtecMonitorUpdate = { from: number; to: number; item: string };
 export function planPadtecRings(pops: DiscoveryPop[], existing: { from_pop: number; to_pop: number }[]) {
   const ids: Record<string, number> = {};
   const problems: string[] = [];
@@ -53,5 +66,6 @@ export function planPadtecRings(pops: DiscoveryPop[], existing: { from_pop: numb
     pairs.add(key);
     planned.push({ from, to, host: "", item: "" });
   }
-  return { planned, existed };
+  const monitoring: PadtecMonitorUpdate[] = PADTEC_SEGMENT_MONITORING.map((m) => ({ from: ids[m.a]!, to: ids[m.b]!, item: m.item }));
+  return { planned, existed, monitoring };
 }
