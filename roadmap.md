@@ -1,5 +1,5 @@
 # Tarefas
-- [ ] Centralizar login e substituir superfícies brancas por escuras com legenda legível, preservando mapas e marca.
+- [x] Centralizar login e substituir superfícies brancas por escuras, com texto claro e marca preservada; posição e acesso conferidos em computador/celular, 10 testes passaram. Legenda com leituras reais depende do Zabbix na VM.
 - [x] Aplicar logo e favicon oficiais com tons do site aos painéis; acesso e telas conferidos em computador/celular, sem alterar código nem cores operacionais dos mapas; 10 testes passaram. Dados reais dos mapas disponíveis apenas na VM.
 - [x] Restaurar bolinhas nos dois mapas, mantendo cores, monitoramento, espessura das linhas e raios.
 - [x] Substituir desenhos rejeitados por roteador clássico nos switches e multiplexador óptico no DWDM; 11 testes passaram e ambos os símbolos foram conferidos no tamanho real. Visualização com todos os equipamentos depende dos dados da VM.
