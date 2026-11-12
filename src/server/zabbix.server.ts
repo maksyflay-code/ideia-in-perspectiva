@@ -2,6 +2,7 @@
 import type { Link } from "@/lib/network.types";
 import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
 import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
+import type { DiscoveryItem, DwdmKind } from "@/lib/dwdm-discovery";
 export type PopStatus = {
   state: "ok" | "warn" | "down" | "unknown";
   problems: { name: string; severity: number }[];
@@ -197,4 +198,18 @@ export async function listOpticalItems(): Promise<OpticalItem[]> {
     search: { key_: "alarmLossLine" },
   })) as OpticalItem[];
   return items.filter((i) => opticalLossKey.test(i.key_)).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function listDwdmItems(kind: DwdmKind): Promise<DiscoveryItem[]> {
+  const c = cfg();
+  if (!c) throw new Error("Zabbix não configurado na VM");
+  const hosts = await call(c, "host.get", {
+    output: ["hostid", "host"],
+    ...(kind === "padtec" ? { filter: { host: [PADTEC_HOST] } } : { search: { host: "eci-" }, startSearch: true }),
+  }) as { hostid: string; host: string }[];
+  const selected = hosts.filter((h) => kind === "padtec" ? h.host === PADTEC_HOST : h.host.startsWith("eci-"));
+  if (!selected.length) throw new Error("Nenhum equipamento deste tipo encontrado no Zabbix");
+  return await call(c, "item.get", {
+    output: ["itemid", "name", "key_"], hostids: selected.map((h) => h.hostid), selectHosts: ["host"],
+  }) as DiscoveryItem[];
 }
