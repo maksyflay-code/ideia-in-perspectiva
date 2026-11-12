@@ -40,7 +40,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => consult("eci")}><Search />Consultar todas as ligações ECI</Button>
     </div>
     {busy && <p role="status" className="text-xs text-muted-foreground">Consultando…</p>}
-    {review && <section className="space-y-3 border-t pt-3" aria-label="Revisão DWDM">
+    {review && <section role="dialog" aria-modal="true" className="fixed inset-4 z-50 overflow-auto rounded-lg border bg-background p-4 shadow-xl md:inset-8 md:p-6" aria-label="Revisão DWDM">
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{kind === "padtec" ? "Padtec" : "ECI"} · {review.itemCount} itens · {review.references.length} referências</h3>
         <Button type="button" variant="ghost" size="icon" aria-label="Fechar revisão" onClick={() => setReview(null)}><X /></Button>
