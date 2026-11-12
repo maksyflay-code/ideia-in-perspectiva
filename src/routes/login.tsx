@@ -41,14 +41,14 @@ function LoginPage() {
     navigate({ to: "/" });
   }
   return (
-    <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden p-5 sm:p-8 lg:justify-end lg:px-24">
+    <div className="relative isolate flex min-h-svh items-center justify-center overflow-hidden p-5 sm:p-8">
       <img src={loginBackground} alt="" width={1920} height={1088} fetchPriority="high" className="absolute inset-0 -z-20 h-full w-full object-cover object-left" />
       <div className="absolute inset-0 -z-10 bg-login-shade" />
-      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-lg border border-card/70 bg-card/95 p-7 backdrop-blur-sm sm:p-8">
+      <form onSubmit={submit} className="w-full max-w-sm space-y-5 rounded-lg border border-border bg-card/95 p-7 backdrop-blur-sm sm:p-8">
         <div className="-mx-7 -mt-7 mb-7 rounded-t-lg bg-primary px-7 py-6 text-primary-foreground sm:-mx-8 sm:-mt-8 sm:px-8"><Brand /></div>
         <div>
           <div className="mb-3 flex items-center gap-2 text-xs font-medium text-muted-foreground"><LockKeyhole className="h-3.5 w-3.5" /> Acesso restrito</div>
-          <h1 className="text-xl font-semibold text-primary">Rede IVI Telecom</h1>
+          <h1 className="text-xl font-semibold text-foreground">Rede IVI Telecom</h1>
         </div>
         <div className="space-y-2"><label htmlFor="login-user" className="text-sm font-medium">Usuário</label><input id="login-user" name="user" aria-label="Usuário" placeholder="Seu usuário" autoComplete="username" className={input} required /></div>
         <div className="space-y-2"><label htmlFor="login-password" className="text-sm font-medium">Senha</label><input id="login-password" name="password" aria-label="Senha" type="password" placeholder="Sua senha" autoComplete="current-password" className={input} required /></div>
