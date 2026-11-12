@@ -199,7 +199,8 @@ export default function NetworkMap({
         // Switch glyph in white; registered as SDF so icon-color tints it by Zabbix state.
         swCtx.fillStyle = "#fff";
         swCtx.fillRect(4, 10, 64, 28);
-        swCtx.fillStyle = "#000";
+        // Cut the ports and arrows out (transparent), so the SDF keeps them as holes.
+        swCtx.globalCompositeOperation = "destination-out";
         for (let i = 0; i < 4; i++) swCtx.fillRect(9 + i * 15, 25, 10, 10);
         swCtx.beginPath();
         swCtx.moveTo(20, 12); swCtx.lineTo(26, 22); swCtx.lineTo(14, 22); swCtx.closePath();
