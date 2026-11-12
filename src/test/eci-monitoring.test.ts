@@ -6,12 +6,36 @@ import type { Db } from "../server/db.server";
 const items = ECI_OSC_SEGMENTS.map((s, n) => ({ itemid: s.item, key_: `ifOperStatus.[${n + 1}]`, name: `OSC: Interface ${s.port} - Operation status`, hosts: [{ host: s.host }] }));
 vi.mock("../server/zabbix.server", () => ({ listDwdmItems: vi.fn() }));
 import { listDwdmItems } from "../server/zabbix.server";
-import { applyEciMonitoring, importEciRing } from "../server/dwdm.server";
+import { applyEciMonitoring, importEciRing, connectIrece } from "../server/dwdm.server";
 const names = ["cafarnaum", "bonito", "tapiramuta", "mairi", "riachao", "fsa", "serrinha", "valente", "cg", "jacobina", "varzeanova"];
 const pops = names.map((name, n) => ({ id: n + 1, name: `eci-${name}`, city: name }));
 const links = names.map((_, n) => ({ id: n + 1, from_pop: n + 1, to_pop: (n + 1) % 11 + 1, zabbix_host: "", zabbix_item: "", monitor_kind: "interface" }));
 
 describe("ECI OSC monitoring", () => {
+  it("connects Irecê only to Cafarnaum with item 169620, preserves the ring and reversed existing monitoring", async () => {
+    const moduleName = "node:sqlite";
+    const { DatabaseSync } = await import(/* @vite-ignore */ moduleName) as typeof import("node:sqlite");
+    const sqlite = new DatabaseSync(":memory:");
+    sqlite.exec("CREATE TABLE pops(id INTEGER,name TEXT,city TEXT); CREATE TABLE links(id INTEGER PRIMARY KEY,from_pop INTEGER,to_pop INTEGER,distance_km REAL,zabbix_host TEXT,zabbix_item TEXT,monitor_kind TEXT,optical_down_value TEXT)");
+    for (const p of pops) sqlite.prepare("INSERT INTO pops VALUES (?,?,?)").run(p.id, p.name, p.city);
+    sqlite.exec("INSERT INTO pops VALUES (12,'eci-irece','IRECE')");
+    const d = sqlite as unknown as Db;
+    importEciRing(d);
+    const osc = { itemid: "169620", name: "OSC: Interface osc100-u1/0 - Operation status", key_: "ifOperStatus.[356]", hosts: [{ host: "eci-irece" }] };
+    vi.mocked(listDwdmItems).mockResolvedValue([osc]);
+    expect(await connectIrece(d)).toEqual({ added: 1, applied: 1, preserved: 0, unchanged: 0 });
+    expect(sqlite.prepare("SELECT * FROM links WHERE from_pop=12").get()).toMatchObject({ to_pop: 1, zabbix_host: "eci-irece", zabbix_item: "169620" });
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM links").get()).toMatchObject({ n: 12 });
+    expect(sqlite.prepare("SELECT * FROM links WHERE from_pop=11 AND to_pop=1").get()).toBeDefined();
+    expect(await connectIrece(d)).toEqual({ added: 0, applied: 0, preserved: 0, unchanged: 1 });
+    sqlite.exec("UPDATE links SET from_pop=1,to_pop=12,zabbix_host='eci-cafarnaum',zabbix_item='169595',distance_km=50 WHERE from_pop=12");
+    expect(await connectIrece(d)).toEqual({ added: 0, applied: 0, preserved: 1, unchanged: 0 });
+    expect(sqlite.prepare("SELECT * FROM links WHERE to_pop=12").get()).toMatchObject({ zabbix_item: "169595", distance_km: 50 });
+    vi.mocked(listDwdmItems).mockResolvedValue([{ ...osc, hosts: [{ host: "eci-fsa" }] }]);
+    await expect(connectIrece(d)).rejects.toThrow("169620");
+    expect(sqlite.prepare("SELECT COUNT(*) AS n FROM links").get()).toMatchObject({ n: 12 });
+    sqlite.close();
+  });
   it("maps the eleven image-confirmed segments to the exported operational IDs", () => {
     const plan = planEciMonitoring(pops, links, items);
     expect(plan.updates.map((l) => [l.id, l.host, l.item])).toEqual([
