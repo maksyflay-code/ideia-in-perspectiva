@@ -1,5 +1,6 @@
 # Tarefas
-- [ ] Incluir ramificação Irecê–Cafarnaum confirmada pelo usuário, com OSC 169620 validada na VM, sem duplicar ou substituir monitoramento existente.
+- [x] Incluir botão de ramificação Irecê–Cafarnaum com OSC 169620, sem duplicar ou substituir monitoramento; 24 testes passaram e botão admin conferido.
+- [ ] Executar conexão Irecê–Cafarnaum e verificar leitura OSC na VM após atualização; Zabbix e POPs reais indisponíveis nesta prévia.
 - [x] Adicionar botão de aplicação dos 11 IDs OSC confirmados ao anel ECI; 23 testes passaram, persistência/repetição validadas e botão conferido com admin.
 - [ ] Aplicar monitoramento OSC e verificar leituras reais na VM; acesso Zabbix e POPs reais ausentes nesta prévia. Alarmes de potência óptica não fazem parte deste botão.
 - [x] Adicionar importação das 11 ligações do anel ECI confirmado nas imagens, sem duplicar ligações nem alterar monitoramento existente; 15 testes passaram, gravação/releitura e filtro DWDM validados, botão conferido com admin.
