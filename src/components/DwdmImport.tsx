@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Download, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { reviewDwdmLinks, importDwdmLinks } from "@/lib/network.functions";
+import { reviewDwdmLinks, importDwdmLinks, importConfirmedEciRing } from "@/lib/network.functions";
 import type { DwdmKind } from "@/lib/dwdm-discovery";
 
 export default function DwdmImport({ onChange }: { onChange: () => void }) {
   const reviewFn = useServerFn(reviewDwdmLinks);
   const importFn = useServerFn(importDwdmLinks);
+  const ringFn = useServerFn(importConfirmedEciRing);
   const [kind, setKind] = useState<DwdmKind>("padtec");
   const [review, setReview] = useState<Awaited<ReturnType<typeof reviewDwdmLinks>> | null>(null);
   const [destinations, setDestinations] = useState<Record<string, string>>({});
@@ -16,6 +17,15 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const choices = (review?.references ?? []).filter((r) => selected[r.key] && destinations[r.key]).map((r) => ({ key: r.key, to: destinations[r.key] ?? "" }));
+  async function saveRing() {
+    setBusy(true); setMsg("");
+    try {
+      const r = await ringFn();
+      setMsg(`Anel ECI: ${r.added} ligações criadas · ${r.existed} já existentes · novas ligações sem monitoramento`);
+      onChange();
+    } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível importar o anel ECI"); }
+    finally { setBusy(false); }
+  }
   async function consult(k: DwdmKind) {
     setBusy(true); setMsg(""); setReview(null); setConfirmed(false); setKind(k);
     try {
@@ -36,6 +46,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
   }
   return <div className="space-y-3">
     <div className="flex flex-wrap gap-2">
+      <Button type="button" variant="outline" size="sm" disabled={busy} onClick={saveRing}><Download />Importar anel ECI (11 ligações)</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => consult("padtec")}><Search />Consultar todas as saídas Padtec</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => consult("eci")}><Search />Consultar todas as ligações ECI</Button>
     </div>

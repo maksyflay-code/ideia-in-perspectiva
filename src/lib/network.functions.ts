@@ -205,6 +205,12 @@ export const reviewDwdmLinks = createServerFn({ method: "POST" })
     return service.reviewDwdm(await db(), data.kind);
   });
 
+export const importConfirmedEciRing = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/dwdm.server");
+  return service.importEciRing(await db());
+});
+
 export const importDwdmLinks = createServerFn({ method: "POST" })
   .inputValidator(z.object({ kind: z.enum(["padtec", "eci"]), choices: z.array(z.object({ key: z.string().min(1).max(500), to: z.string().min(1).max(80) })).min(1).max(5000), confirmed: z.literal(true) }))
   .handler(async ({ data }) => {
