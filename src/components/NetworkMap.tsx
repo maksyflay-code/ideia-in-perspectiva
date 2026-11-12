@@ -197,33 +197,50 @@ export default function NetworkMap({
       swCanvas.width = 72; swCanvas.height = 48;
       const swCtx = swCanvas.getContext("2d");
       if (swCtx) {
-        // Switch glyph in white; registered as SDF so icon-color tints it by Zabbix state.
-        swCtx.fillStyle = "#fff";
-        swCtx.fillRect(4, 10, 64, 28);
-        // Cut the ports and arrows out (transparent), so the SDF keeps them as holes.
-        swCtx.globalCompositeOperation = "destination-out";
-        for (let i = 0; i < 4; i++) swCtx.fillRect(9 + i * 15, 25, 10, 10);
+        // Classic topology router: elliptical outline and four routing arrows.
+        swCtx.strokeStyle = signal;
+        swCtx.fillStyle = signal;
+        swCtx.lineWidth = 4;
         swCtx.beginPath();
-        swCtx.moveTo(20, 12); swCtx.lineTo(26, 22); swCtx.lineTo(14, 22); swCtx.closePath();
-        swCtx.moveTo(52, 24); swCtx.lineTo(58, 14); swCtx.lineTo(46, 14); swCtx.closePath();
-        swCtx.fill();
+        for (let i = 0; i <= 64; i++) {
+          const angle = i * Math.PI * 2 / 64;
+          const x = 36 + 31 * Math.cos(angle);
+          const y = 24 + 19 * Math.sin(angle);
+          if (i === 0) swCtx.moveTo(x, y); else swCtx.lineTo(x, y);
+        }
+        swCtx.closePath(); swCtx.stroke();
+        for (const [x, y, dx, dy] of [[18, 17, 14, 0], [54, 31, -14, 0], [43, 13, 0, 13], [29, 35, 0, -13]]) {
+          if (x === undefined || y === undefined || dx === undefined || dy === undefined) continue;
+          const endX = x + dx; const endY = y + dy;
+          const ux = dx / 14; const uy = dy / 14;
+          swCtx.beginPath(); swCtx.moveTo(x, y); swCtx.lineTo(endX, endY); swCtx.stroke();
+          swCtx.beginPath(); swCtx.moveTo(endX, endY);
+          swCtx.lineTo(endX - ux * 6 - uy * 5, endY - uy * 6 + ux * 5);
+          swCtx.lineTo(endX - ux * 6 + uy * 5, endY - uy * 6 - ux * 5);
+          swCtx.closePath(); swCtx.fill();
+        }
         m.addImage("sw-icon", swCtx.getImageData(0, 0, 72, 48), { pixelRatio: 2, sdf: true });
       }
       const opticalCanvas = document.createElement("canvas");
       opticalCanvas.width = 72; opticalCanvas.height = 56;
       const opticalCtx = opticalCanvas.getContext("2d");
       if (opticalCtx) {
-        // Modular optical chassis with rack ears, cards and fiber connectors.
-        // Only alpha defines the SDF; the marker color comes from status tokens.
-        opticalCtx.fillStyle = signal;
-        opticalCtx.fillRect(8, 6, 56, 44);
-        opticalCtx.fillRect(2, 14, 6, 28);
-        opticalCtx.fillRect(64, 14, 6, 28);
-        opticalCtx.globalCompositeOperation = "destination-out";
-        for (let i = 0; i < 4; i++) {
-          opticalCtx.fillRect(13 + i * 12, 12, 7, 20);
-          opticalCtx.fillRect(13 + i * 12, 38, 7, 6);
+        // Optical multiplexer: three wavelengths converge into one fiber.
+        opticalCtx.strokeStyle = signal;
+        opticalCtx.lineWidth = 4;
+        opticalCtx.lineJoin = "round";
+        opticalCtx.lineCap = "round";
+        opticalCtx.beginPath();
+        opticalCtx.moveTo(36, 8); opticalCtx.lineTo(52, 28);
+        opticalCtx.lineTo(36, 48); opticalCtx.lineTo(20, 28);
+        opticalCtx.closePath(); opticalCtx.stroke();
+        for (const y of [10, 28, 46]) {
+          opticalCtx.beginPath(); opticalCtx.moveTo(4, y);
+          opticalCtx.lineTo(12, y); opticalCtx.lineTo(20, 28);
+          opticalCtx.stroke();
         }
+        opticalCtx.beginPath(); opticalCtx.moveTo(52, 28);
+        opticalCtx.lineTo(68, 28); opticalCtx.stroke();
         m.addImage("dwdm-icon", opticalCtx.getImageData(0, 0, 72, 56), { pixelRatio: 2, sdf: true });
       }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
@@ -244,7 +261,7 @@ export default function NetworkMap({
           id: "pops",
           type: "symbol",
           source: "pops",
-          layout: { "icon-image": kind === "sw" ? "sw-icon" : "dwdm-icon", "icon-size": ["match", ["get", "state"], "down", 1.15, 1], "icon-allow-overlap": true },
+          layout: { "icon-image": kind === "sw" ? "sw-icon" : "dwdm-icon", "icon-size": 1, "icon-allow-overlap": true },
           paint: { "icon-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "icon-halo-color": outline, "icon-halo-width": 2 },
         });
       else
