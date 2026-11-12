@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { login } from "@/lib/network.functions";
+import Brand from "@/components/Brand";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -39,12 +41,13 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-lg border bg-card p-6">
-        <h1 className="font-mono text-sm font-bold tracking-widest text-primary">REDE IVI TELECOM</h1>
+        <div className="-mx-6 -mt-6 mb-6 rounded-t-lg bg-primary px-6 py-5 text-primary-foreground"><Brand /></div>
+        <h1 className="text-base font-semibold text-primary">Rede IVI Telecom</h1>
         <p className="text-xs text-muted-foreground">Acesso restrito. Entre com seu usuário e senha.</p>
         <input name="user" aria-label="Usuário" placeholder="Usuário" autoComplete="username" className={input} required />
         <input name="password" aria-label="Senha" type="password" placeholder="Senha" autoComplete="current-password" className={input} required />
         {err && <p className="text-sm text-destructive">{err}</p>}
-        <button className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50" disabled={busy}>Entrar</button>
+        <Button className="w-full" disabled={busy}>Entrar</Button>
       </form>
     </div>
   );

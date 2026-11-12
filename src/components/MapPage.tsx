@@ -6,6 +6,8 @@ import { lazy, Suspense, useState } from "react";
 import { networkQuery, zabbixQuery } from "@/lib/network.queries";
 import { pathDistance } from "@/lib/network.types";
 import { filterNetwork } from "@/lib/map-layout";
+import Brand from "@/components/Brand";
+import { Button } from "@/components/ui/button";
 
 const NetworkMap = lazy(() => import("@/components/NetworkMap"));
 
@@ -30,19 +32,20 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
   return (
     <div className="flex h-screen flex-col md:flex-row">
       {!hidden && <aside className="flex w-full flex-col border-b bg-card md:w-80 md:border-b-0 md:border-r">
-        <header className="flex items-center justify-between border-b px-4 py-3">
+        <header className="flex flex-wrap items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
           <div>
-            <h1 className="font-mono text-sm font-bold tracking-widest text-primary">{kind === "sw" ? "REDE IVI TELECOM" : "DWDM IVI TELECOM"}</h1>
-            <p className="text-xs text-muted-foreground">
+            <Brand compact />
+            <h1 className="mt-2 text-xs font-semibold">{kind === "sw" ? "Rede IVI Telecom" : "DWDM IVI Telecom"}</h1>
+            <p className="text-xs text-primary-foreground/75">
               {net.pops.length} POPs · {net.links.length} ligações
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground">Admin</Link>
-            <button onClick={sair} className="text-xs text-muted-foreground hover:text-foreground">Sair</button>
-            <button onClick={() => setHidden(true)} aria-label="Ocultar barra lateral" title="Ocultar barra lateral" className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+          <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="sm" className="px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/admin">Admin</Link></Button>
+            <Button onClick={sair} variant="ghost" size="sm" className="px-2 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">Sair</Button>
+            <Button variant="ghost" size="icon" onClick={() => setHidden(true)} aria-label="Ocultar barra lateral" title="Ocultar barra lateral" className="h-7 w-7 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
               <PanelLeftClose className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </header>
         <nav aria-label="Mapas" className="grid grid-cols-2 gap-1 border-b p-2 text-xs">
