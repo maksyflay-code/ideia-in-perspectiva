@@ -198,13 +198,12 @@ export default function NetworkMap({
       if (swCtx) {
         // Switch glyph in white; registered as SDF so icon-color tints it by Zabbix state.
         swCtx.fillStyle = "#fff";
-        swCtx.fillRect(4, 12, 64, 30);
+        swCtx.fillRect(4, 10, 64, 28);
         swCtx.fillStyle = "#000";
-        for (let i = 0; i < 4; i++) swCtx.fillRect(10 + i * 14, 30, 9, 9);
+        for (let i = 0; i < 4; i++) swCtx.fillRect(9 + i * 15, 25, 10, 10);
         swCtx.beginPath();
-        swCtx.moveTo(14, 17); swCtx.lineTo(20, 25); swCtx.lineTo(8, 25); swCtx.closePath();
-        swCtx.moveTo(36, 25); swCtx.lineTo(42, 17); swCtx.lineTo(30, 17); swCtx.closePath();
-        swCtx.moveTo(58, 17); swCtx.lineTo(64, 25); swCtx.lineTo(52, 25); swCtx.closePath();
+        swCtx.moveTo(20, 12); swCtx.lineTo(26, 22); swCtx.lineTo(14, 22); swCtx.closePath();
+        swCtx.moveTo(52, 24); swCtx.lineTo(58, 14); swCtx.lineTo(46, 14); swCtx.closePath();
         swCtx.fill();
         m.addImage("sw-icon", swCtx.getImageData(0, 0, 72, 48), { pixelRatio: 2, sdf: true });
       }
