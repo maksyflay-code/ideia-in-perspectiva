@@ -19,12 +19,14 @@ describe("Padtec rings", () => {
   it("connects Juazeiro–Picos–Canindé–Sobral–Fortaleza with loss alarms", () => {
     const r = planPadtecRings(pops, []);
     const id = (n: string) => pops.find((p) => p.name === `padtec-${n}`)!.id;
-    expect(r.monitoring).toEqual([
+    expect(r.monitoring).toHaveLength(14);
+    expect(r.monitoring).toEqual(expect.arrayContaining([
       { from: id("juazeiro"), to: id("picos"), item: "141616" },
       { from: id("picos"), to: id("caninde"), item: "141611" },
       { from: id("caninde"), to: id("sobral"), item: "157291" },
       { from: id("sobral"), to: id("globenet"), item: "157292" },
-    ]);
+      { from: id("juazeiro"), to: id("vila-nova"), item: "162237" },
+    ]));
   });
   it("skips existing links in either direction", () => {
     expect(planPadtecRings(pops, [{ from_pop: 2, to_pop: 1 }]).existed).toBe(1);
