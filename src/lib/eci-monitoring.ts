@@ -17,10 +17,12 @@ export const ECI_OSC_SEGMENTS = [
 
 export type EciMonitoringLink = { id: number; from_pop: number; to_pop: number; zabbix_host: string; zabbix_item: string; monitor_kind: string };
 
-export function planEciMonitoring(pops: DiscoveryPop[], links: EciMonitoringLink[], items: DiscoveryItem[]) {
+export const IRECE_OSC_SEGMENT = { host: "eci-irece", to: "eci-cafarnaum", item: "169620", port: "osc100-u1/0" };
+
+export function planEciMonitoring(pops: DiscoveryPop[], links: EciMonitoringLink[], items: DiscoveryItem[], segments = ECI_OSC_SEGMENTS) {
   const updates: { id: number; host: string; item: string }[] = [];
   let missing = 0, preserved = 0, unchanged = 0;
-  for (const segment of ECI_OSC_SEGMENTS) {
+  for (const segment of segments) {
     const item = items.find((i) => i.itemid === segment.item);
     if (!item || !item.hosts.some((h) => h.host === segment.host) ||
       !/^ifOperStatus\.\[\d+\]$/.test(item.key_) ||
