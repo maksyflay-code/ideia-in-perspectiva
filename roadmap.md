@@ -1,4 +1,7 @@
 # Tarefas
+- [x] Substituir listas de três ligações por consulta de todas as referências Padtec/ECI na VM, com revisão dos circuitos e pendências sem destino.
+- [x] Validar descoberta, duplicatas e gravação/releitura da importação selecionada; 53 testes passaram e botões conferidos com sessão admin.
+- [ ] Conferir destinos reais e importar na VM; bloqueado pelo acesso ao Zabbix disponível somente na VM.
 - [x] Incluir cadastro e monitoramento de alarme óptico Padtec sem alterar os switches.
 - [x] Validar persistência SQLite, 43 testes e formulário com sessão admin em computador e celular.
 - [ ] Confirmar Line e significado do alarme de Santa Luzia; bloqueado pela ausência de configuração Zabbix nesta prévia. Consultar na VM e confirmar o trecho antes de salvar.
