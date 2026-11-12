@@ -1,6 +1,7 @@
 # Tarefas
-- [ ] Incluir cadastro e monitoramento de alarme óptico Padtec sem alterar os switches.
-- [ ] Validar persistência, estados e formulário; confirmar Line e significado do alarme de Santa Luzia com dados reais.
+- [x] Incluir cadastro e monitoramento de alarme óptico Padtec sem alterar os switches.
+- [x] Validar persistência SQLite, 43 testes e formulário com sessão admin em computador e celular.
+- [ ] Confirmar Line e significado do alarme de Santa Luzia; bloqueado pela ausência de configuração Zabbix nesta prévia. Consultar na VM e confirmar o trecho antes de salvar.
 - [x] Aproximar os equipamentos na mesma localização e diferenciar as cores dos pontos DWDM por estado.
 - [x] Separar equipamentos próximos apenas na apresentação do mapa.
 - [x] Destacar ligações Padtec/ECI com raios verdes e validar os estados em testes e cenário visual.
