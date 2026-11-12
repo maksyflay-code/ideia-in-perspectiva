@@ -100,7 +100,6 @@ export default function NetworkMap({
   network,
   channelId,
   zabbix,
-  kind = "sw",
 }: {
   network: Network;
   channelId: number | null;
@@ -193,56 +192,6 @@ export default function NetworkMap({
         ctx.closePath(); ctx.fill(); ctx.stroke();
         m.addImage("fiber-bolt", ctx.getImageData(0, 0, 32, 40), { pixelRatio: 2 });
       }
-      const swCanvas = document.createElement("canvas");
-      swCanvas.width = 72; swCanvas.height = 48;
-      const swCtx = swCanvas.getContext("2d");
-      if (swCtx) {
-        // Classic topology router: elliptical outline and four routing arrows.
-        swCtx.strokeStyle = signal;
-        swCtx.fillStyle = signal;
-        swCtx.lineWidth = 4;
-        swCtx.beginPath();
-        for (let i = 0; i <= 64; i++) {
-          const angle = i * Math.PI * 2 / 64;
-          const x = 36 + 31 * Math.cos(angle);
-          const y = 24 + 19 * Math.sin(angle);
-          if (i === 0) swCtx.moveTo(x, y); else swCtx.lineTo(x, y);
-        }
-        swCtx.closePath(); swCtx.stroke();
-        for (const [x, y, dx, dy] of [[18, 17, 14, 0], [54, 31, -14, 0], [43, 13, 0, 13], [29, 35, 0, -13]]) {
-          if (x === undefined || y === undefined || dx === undefined || dy === undefined) continue;
-          const endX = x + dx; const endY = y + dy;
-          const ux = dx / 14; const uy = dy / 14;
-          swCtx.beginPath(); swCtx.moveTo(x, y); swCtx.lineTo(endX, endY); swCtx.stroke();
-          swCtx.beginPath(); swCtx.moveTo(endX, endY);
-          swCtx.lineTo(endX - ux * 6 - uy * 5, endY - uy * 6 + ux * 5);
-          swCtx.lineTo(endX - ux * 6 + uy * 5, endY - uy * 6 - ux * 5);
-          swCtx.closePath(); swCtx.fill();
-        }
-        m.addImage("sw-icon", swCtx.getImageData(0, 0, 72, 48), { pixelRatio: 2, sdf: true });
-      }
-      const opticalCanvas = document.createElement("canvas");
-      opticalCanvas.width = 72; opticalCanvas.height = 56;
-      const opticalCtx = opticalCanvas.getContext("2d");
-      if (opticalCtx) {
-        // Optical multiplexer: three wavelengths converge into one fiber.
-        opticalCtx.strokeStyle = signal;
-        opticalCtx.lineWidth = 4;
-        opticalCtx.lineJoin = "round";
-        opticalCtx.lineCap = "round";
-        opticalCtx.beginPath();
-        opticalCtx.moveTo(36, 8); opticalCtx.lineTo(52, 28);
-        opticalCtx.lineTo(36, 48); opticalCtx.lineTo(20, 28);
-        opticalCtx.closePath(); opticalCtx.stroke();
-        for (const y of [10, 28, 46]) {
-          opticalCtx.beginPath(); opticalCtx.moveTo(4, y);
-          opticalCtx.lineTo(12, y); opticalCtx.lineTo(20, 28);
-          opticalCtx.stroke();
-        }
-        opticalCtx.beginPath(); opticalCtx.moveTo(52, 28);
-        opticalCtx.lineTo(68, 28); opticalCtx.stroke();
-        m.addImage("dwdm-icon", opticalCtx.getImageData(0, 0, 72, 56), { pixelRatio: 2, sdf: true });
-      }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
@@ -256,16 +205,7 @@ export default function NetworkMap({
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
-      if (kind === "sw" ? swCtx : opticalCtx)
-        m.addLayer({
-          id: "pops",
-          type: "symbol",
-          source: "pops",
-          layout: { "icon-image": kind === "sw" ? "sw-icon" : "dwdm-icon", "icon-size": 1, "icon-allow-overlap": true },
-          paint: { "icon-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "icon-halo-color": outline, "icon-halo-width": 2 },
-        });
-      else
-        m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
+      m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",
         type: "symbol",
