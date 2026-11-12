@@ -8,6 +8,10 @@ const SITES: Record<string, string[]> = {
   pombal: ["pombal", "ribeiradopombal"], cicero: ["cicero", "cicerodantas"], euclides: ["euclides", "euclidesdacunha"],
   bendego: ["bendego"], uaua: ["uaua"], pinhoes: ["pinhoes"], juazeiro: ["juazeiro"], massaroca: ["massaroca"],
   bonfim: ["senhordobonfim", "bonfim"], jeremoabo: ["jeremoabo"], pauloafonso: ["pauloafonso", "paf"],
+  capimgrosso: ["capimgrosso", "cg"], baixagrande: ["baixagrande", "bxg"],
+  vilanova: ["vilanova", "vln"], juazeirodonorte: ["juazeirodonorte", "jne"], sousa: ["sousa", "sza"],
+  moradanova: ["moradanova", "mnv"], mossoro: ["mossoro", "mro"], fortaleza: ["globenet", "fortalezaglobenet", "fla"],
+  santaluzia: ["santaluzia", "slz"],
 };
 export const PADTEC_RING_SEGMENTS: [string, string][] = [
   ["telxius", "candeias"], ["telxius", "bastiao"], ["candeias", "jacuipe"], ["jacuipe", "fsa"], ["fsa", "serrinha"],
@@ -17,6 +21,12 @@ export const PADTEC_RING_SEGMENTS: [string, string][] = [
   ["euclides", "bendego"], ["euclides", "cicero"], ["bendego", "uaua"], ["uaua", "pinhoes"], ["pinhoes", "juazeiro"],
   ["juazeiro", "massaroca"], ["massaroca", "bonfim"],
   ["cicero", "jeremoabo"], ["jeremoabo", "pauloafonso"],
+  // Admin-confirmed Bonfim–Capim Grosso; CG<>BXG amplifier labels on both sides.
+  ["bonfim", "capimgrosso"], ["capimgrosso", "baixagrande"],
+  // Northern ring from TMD400G degree labels (JUZ ECN/VLN, VLN JNE/JUZ, JNE SZA/VLN, SZA MNV/JNE+SLZ, MNV FLA/MRO+SZA, MRO FLA/MNV+SLZ, GLOBENET MNV/MRO, SLZ PAF).
+  ["juazeiro", "vilanova"], ["vilanova", "juazeirodonorte"], ["juazeirodonorte", "sousa"], ["sousa", "moradanova"],
+  ["sousa", "santaluzia"], ["moradanova", "fortaleza"], ["moradanova", "mossoro"], ["mossoro", "fortaleza"],
+  ["mossoro", "santaluzia"], ["santaluzia", "pauloafonso"],
 ];
 
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -25,7 +35,9 @@ export function planPadtecRings(pops: DiscoveryPop[], existing: { from_pop: numb
   const ids: Record<string, number> = {};
   const problems: string[] = [];
   for (const [site, aliases] of Object.entries(SITES)) {
-    const m = pops.filter((p) => p.name.startsWith("padtec-") && aliases.includes(norm(p.name.slice(7))));
+    // Aliases are tried in order so a preferred exact name wins over a looser one.
+    let m: DiscoveryPop[] = [];
+    for (const a of aliases) { m = pops.filter((p) => p.name.startsWith("padtec-") && norm(p.name.slice(7)) === a); if (m.length) break; }
     if (m.length !== 1 || !m[0]) problems.push(`${site}: ${m.length ? "mais de um Padtec" : "Padtec não cadastrado"}`);
     else ids[site] = m[0].id;
   }
