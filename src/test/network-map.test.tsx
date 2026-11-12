@@ -201,9 +201,4 @@ describe("Ícone de switch", () => {
     expect(layer.layout["icon-image"]).toBe("sw-icon");
     expect(layer.paint["icon-color"]).toEqual(["match", ["get", "state"], "ok", "rgb(1, 2, 3)", "warn", "rgb(1, 2, 3)", "down", "rgb(200, 30, 30)", "unknown", "rgb(1, 2, 3)", "rgb(1, 2, 3)"]);
   });
-  it("mapa DWDM mantém o ponto redondo", () => {
-    render(<NetworkMap network={network} channelId={null} kind="dwdm" />);
-    act(() => mock.handlers["load"]?.());
-    expect(mock.layers["pops"].type).toBe("circle");
-  });
 });

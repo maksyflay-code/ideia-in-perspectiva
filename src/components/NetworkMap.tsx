@@ -67,7 +67,8 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
       members.sort((a, b) => equipmentType(a.name).localeCompare(equipmentType(b.name)) || a.name.localeCompare(b.name));
       const states = members.map((p) => (z?.enabled ? (z.byName[p.name]?.state ?? "unknown") : "none"));
       const state = states.reduce((w, s) => ((rank[s] ?? 0) > (rank[w] ?? 0) ? s : w), states[0] ?? "none");
-      const p = members[0]!;
+      const p = members[0];
+      if (!p) throw new Error("Grupo de equipamentos vazio");
       return {
       type: "Feature" as const,
       properties: {
@@ -208,25 +209,42 @@ export default function NetworkMap({
         swCtx.fill();
         m.addImage("sw-icon", swCtx.getImageData(0, 0, 72, 48), { pixelRatio: 2, sdf: true });
       }
+      const opticalCanvas = document.createElement("canvas");
+      opticalCanvas.width = 72; opticalCanvas.height = 56;
+      const opticalCtx = opticalCanvas.getContext("2d");
+      if (opticalCtx) {
+        // Modular optical chassis with rack ears, cards and fiber connectors.
+        // Only alpha defines the SDF; the marker color comes from status tokens.
+        opticalCtx.fillStyle = signal;
+        opticalCtx.fillRect(8, 6, 56, 44);
+        opticalCtx.fillRect(2, 14, 6, 28);
+        opticalCtx.fillRect(64, 14, 6, 28);
+        opticalCtx.globalCompositeOperation = "destination-out";
+        for (let i = 0; i < 4; i++) {
+          opticalCtx.fillRect(13 + i * 12, 12, 7, 20);
+          opticalCtx.fillRect(13 + i * 12, 38, 7, 6);
+        }
+        m.addImage("dwdm-icon", opticalCtx.getImageData(0, 0, 72, 56), { pixelRatio: 2, sdf: true });
+      }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
       m.addSource("secondary", { type: "geojson", data: d.secondary });
       m.addSource("primary", { type: "geojson", data: d.primary });
       m.addSource("pops", { type: "geojson", data: d.pops });
       m.addSource("dwdm-bolts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 2, "line-opacity": 0.8 } });
+      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 4, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
-      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 2.5, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
-      if (kind === "sw" && swCtx)
+      if (kind === "sw" ? swCtx : opticalCtx)
         m.addLayer({
           id: "pops",
           type: "symbol",
           source: "pops",
-          layout: { "icon-image": "sw-icon", "icon-size": ["match", ["get", "state"], "down", 1.15, 1], "icon-allow-overlap": true },
+          layout: { "icon-image": kind === "sw" ? "sw-icon" : "dwdm-icon", "icon-size": ["match", ["get", "state"], "down", 1.15, 1], "icon-allow-overlap": true },
           paint: { "icon-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "icon-halo-color": outline, "icon-halo-width": 2 },
         });
       else

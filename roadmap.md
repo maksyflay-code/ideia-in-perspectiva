@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Igualar espessura das linhas dos switches à do DWDM e conferir símbolo de chassi óptico nos pontos DWDM, preservando cores e raios.
 - [x] Incluir botão de ramificação Irecê–Cafarnaum com OSC 169620, sem duplicar ou substituir monitoramento; 24 testes passaram e botão admin conferido.
 - [ ] Executar conexão Irecê–Cafarnaum e verificar leitura OSC na VM após atualização; Zabbix e POPs reais indisponíveis nesta prévia.
 - [x] Adicionar botão de aplicação dos 11 IDs OSC confirmados ao anel ECI; 23 testes passaram, persistência/repetição validadas e botão conferido com admin.
