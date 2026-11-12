@@ -222,3 +222,28 @@ export const importEciLinks = createServerFn({ method: "POST" }).handler(async (
   }
   return { added, existed, missing: [...new Set(missing)] };
 });
+
+export const PADTEC_PRESET_LINKS = [
+  { from: "padtec-santa-luzia", to: "padtec-paulo-afonso" },
+  { from: "padtec-santa-luzia", to: "padtec-mossoro" },
+  { from: "padtec-santa-luzia", to: "padtec-sousa" },
+] as const;
+
+export const importPadtecLinks = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const d = await db();
+  const idOf = (n: string) => (d.prepare("SELECT id FROM pops WHERE name=?").get(n) as { id: number } | undefined)?.id;
+  const ins = d.prepare(
+    "INSERT INTO links (from_pop, to_pop, distance_km, zabbix_host, zabbix_item, monitor_kind, optical_down_value) VALUES (?,?,0,'','','interface','')",
+  );
+  let added = 0, existed = 0;
+  const missing: string[] = [];
+  for (const l of PADTEC_PRESET_LINKS) {
+    const a = idOf(l.from), b = idOf(l.to);
+    if (!a || !b) { missing.push(!a ? l.from : l.to); continue; }
+    if (d.prepare("SELECT 1 FROM links WHERE (from_pop=? AND to_pop=?) OR (from_pop=? AND to_pop=?)").get(a, b, b, a)) { existed++; continue; }
+    ins.run(a, b);
+    added++;
+  }
+  return { added, existed, missing: [...new Set(missing)] };
+});

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { PENDING_NOTE, deleteItem, importZabbixHosts, importEciLinks, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importZabbixHosts, importEciLinks, importPadtecLinks, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 
@@ -268,6 +268,16 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
           } catch (e) { setMsg(e instanceof Error ? e.message : "Erro ao importar"); } finally { setBusy(""); }
         }}>
           {busy === "eci-links" ? "Importando…" : "Importar ligações ECI (3)"}
+        </button>
+        <button type="button" className={ghost} disabled={!!busy} onClick={async () => {
+          setBusy("padtec-links"); setMsg("");
+          try {
+            const r = await importPadtecLinks();
+            setMsg(`Ligações Padtec: ${r.added} criadas (sem monitoramento) · ${r.existed} já existiam${r.missing.length ? ` · POP não encontrado: ${r.missing.join(", ")}` : ""}`);
+            onChange();
+          } catch (e) { setMsg(e instanceof Error ? e.message : "Erro ao importar"); } finally { setBusy(""); }
+        }}>
+          {busy === "padtec-links" ? "Importando…" : "Importar ligações Padtec (3)"}
         </button>
       </div>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
