@@ -77,7 +77,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         state,
         dwdm: members.every((x) => equipmentType(x.name) !== "sw"),
         labelAnchor: "top",
-        labelOffset: [0, 1.4],
+        labelOffset: [0, 2],
         label: members.length > 1 ? `${mapLabel(p.name).split("\n").pop()} (${members.length})` : mapLabel(p.name),
         count: members.length,
         ids: JSON.stringify(members.map((x) => x.id)),
@@ -193,20 +193,20 @@ export default function NetworkMap({
         m.addImage("fiber-bolt", ctx.getImageData(0, 0, 32, 40), { pixelRatio: 2 });
       }
       const swCanvas = document.createElement("canvas");
-      swCanvas.width = 44; swCanvas.height = 30;
+      swCanvas.width = 72; swCanvas.height = 48;
       const swCtx = swCanvas.getContext("2d");
       if (swCtx) {
         // Switch glyph in white; registered as SDF so icon-color tints it by Zabbix state.
         swCtx.fillStyle = "#fff";
-        swCtx.fillRect(2, 8, 40, 18);
+        swCtx.fillRect(4, 12, 64, 30);
         swCtx.fillStyle = "#000";
-        for (let i = 0; i < 4; i++) swCtx.fillRect(6 + i * 7, 19, 4, 4);
+        for (let i = 0; i < 4; i++) swCtx.fillRect(10 + i * 14, 30, 9, 9);
         swCtx.beginPath();
-        swCtx.moveTo(10, 11); swCtx.lineTo(13, 15); swCtx.lineTo(7, 15); swCtx.closePath();
-        swCtx.moveTo(20, 15); swCtx.lineTo(23, 11); swCtx.lineTo(17, 11); swCtx.closePath();
-        swCtx.moveTo(30, 11); swCtx.lineTo(33, 15); swCtx.lineTo(27, 15); swCtx.closePath();
+        swCtx.moveTo(14, 17); swCtx.lineTo(20, 25); swCtx.lineTo(8, 25); swCtx.closePath();
+        swCtx.moveTo(36, 25); swCtx.lineTo(42, 17); swCtx.lineTo(30, 17); swCtx.closePath();
+        swCtx.moveTo(58, 17); swCtx.lineTo(64, 25); swCtx.lineTo(52, 25); swCtx.closePath();
         swCtx.fill();
-        m.addImage("sw-icon", swCtx.getImageData(0, 0, 44, 30), { pixelRatio: 2, sdf: true });
+        m.addImage("sw-icon", swCtx.getImageData(0, 0, 72, 48), { pixelRatio: 2, sdf: true });
       }
       const d = buildData(latest.current.network, latest.current.channelId, latest.current.zabbix, m);
       m.addSource("links", { type: "geojson", data: d.links });
