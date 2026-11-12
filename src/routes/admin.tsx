@@ -4,6 +4,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
 import { PENDING_NOTE, deleteItem, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
+import LinkMonitorFields from "@/components/LinkMonitorFields";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -296,6 +297,8 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
           distance_km: Number(String(f.get("km")).replace(",", ".")),
           zabbix_host: String(f.get("zh") ?? ""),
           zabbix_item: String(f.get("zi") ?? ""),
+          monitor_kind: f.get("monitor_kind") === "padtec_loss" ? "padtec_loss" : "interface",
+          optical_down_value: f.get("optical_down_value") === "1" ? "1" : f.get("optical_down_value") === "0" ? "0" : "",
         },
       }),
     );
@@ -314,10 +317,7 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
           <label className="block text-xs text-muted-foreground">Destino</label>
           <PopSelect name="to" net={net} value={edit?.to_pop} />
           <input name="km" placeholder="Distância (km)" defaultValue={edit?.distance_km} className={input} required />
-          <label className="block text-xs text-muted-foreground" htmlFor="link-host">Host Zabbix da porta</label>
-          <input id="link-host" name="zh" placeholder="Ex: sw-serrinha" defaultValue={edit?.zabbix_host} className={input} />
-          <label className="block text-xs text-muted-foreground" htmlFor="link-item">Item ID · estado operacional (ifOperStatus)</label>
-          <input id="link-item" name="zi" inputMode="numeric" pattern="[0-9]*" placeholder="ID do item da porta deste enlace" defaultValue={edit?.zabbix_item} className={input} />
+          <LinkMonitorFields link={edit} />
           {s.err && <p className="text-sm text-destructive">{s.err}</p>}
           <div className="flex gap-2">
             <button className={btn} disabled={s.busy || net.pops.length < 2}>Salvar</button>
@@ -333,7 +333,7 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
               <tr key={l.id}>
                 <td className={`${td} font-mono`}>{name(l.from_pop)} ↔ {name(l.to_pop)}</td>
                 <td className={td}>{l.distance_km}</td>
-                <td className={`${td} text-xs text-muted-foreground`}>{l.zabbix_host || "—"}</td>
+                <td className={`${td} text-xs text-muted-foreground`}>{l.zabbix_host || "—"}{l.monitor_kind === "padtec_loss" && <div>Loss · ID {l.zabbix_item}</div>}</td>
                 <td className={`${td} space-x-3 text-right`}>
                   <button className="text-xs text-primary hover:underline" onClick={() => setEdit(l)}>Editar</button>
                   <Del kind="links" id={l.id} onChange={onChange} />
