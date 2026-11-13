@@ -8,6 +8,8 @@ const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/
 export const MISSING_LINKS: { label: string; a: string[]; b: string[]; monitor?: { host: string; item: string } }[] = [
   { label: "Lagoa 33 ↔ Angical (switch)", a: ["sw-lagoa33"], b: ["sw-angical"], monitor: { host: "sw-angical", item: "167218" } },
   { label: "Catuaba ↔ Cafarnaum (switch)", a: ["sw-catuaba"], b: ["sw-cafarnaum"], monitor: { host: "sw-cafarnaum", item: "171878" } },
+  { label: "Cícero ↔ Lagarto (switch)", a: ["sw-cicero"], b: ["sw-lagarto"], monitor: { host: "sw-cicero", item: "165046" } },
+  { label: "Lagarto ↔ Aracaju (switch)", a: ["sw-lagarto"], b: ["sw-aracaju"], monitor: { host: "sw-lagarto", item: "168217" } },
   { label: "Picos ↔ Vila Nova (Padtec)", a: ["padtec-picos", "padtec-pcz"], b: ["padtec-vilanova", "padtec-vln"] },
 ];
 
