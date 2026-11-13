@@ -2,11 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { PENDING_NOTE, deleteItem, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importChapadaCoite, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
 import Brand from "@/components/Brand";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -265,6 +266,21 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
         </button>
       </div>
       <DwdmImport onChange={onChange} />
+      <Button type="button" variant="outline" size="sm" disabled={!!busy} className="h-auto whitespace-normal" onClick={async () => {
+        setBusy("chapada-coite");
+        setMsg("");
+        try {
+          const r = await importChapadaCoite();
+          setMsg(`${r.added ? "sw-chapada-coite cadastrado na localização informada" : "sw-chapada-coite já cadastrado; dados preservados"}. Nenhuma ligação criada: Juazeirinho sem destino confirmado e saída Tely/TIM sem ponto de destino.`);
+          onChange();
+        } catch (e) {
+          setMsg(e instanceof Error ? e.message : "Erro ao cadastrar Chapada Coité");
+        } finally {
+          setBusy("");
+        }
+      }}>
+        {busy === "chapada-coite" ? "Cadastrando…" : "Cadastrar sw-chapada-coite"}
+      </Button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </div>
   );

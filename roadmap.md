@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Preparar cadastro de sw-chapada-coite no ponto indicado, guardar IDs 186132/186133 e manter ligações sem destino confirmado pendentes; execução na VM depende da atualização pelo usuário.
 - [x] Centralizar login e substituir superfícies brancas por escuras, com texto claro e marca preservada; posição e acesso conferidos em computador/celular, 10 testes passaram. Legenda com leituras reais depende do Zabbix na VM.
 - [x] Aplicar logo e favicon oficiais com tons do site aos painéis; acesso e telas conferidos em computador/celular, sem alterar código nem cores operacionais dos mapas; 10 testes passaram. Dados reais dos mapas disponíveis apenas na VM.
 - [x] Restaurar bolinhas nos dois mapas, mantendo cores, monitoramento, espessura das linhas e raios.
