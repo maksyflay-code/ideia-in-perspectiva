@@ -242,3 +242,9 @@ export const importDwdmLinks = createServerFn({ method: "POST" })
     const service = await import("@/server/dwdm.server");
     return service.importReviewedDwdm(await db(), data.kind, data.choices);
   });
+
+export const importMissingLinks = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/missing-links.server");
+  return service.importMissingLinks(await db());
+});
