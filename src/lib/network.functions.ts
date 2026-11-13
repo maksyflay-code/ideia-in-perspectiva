@@ -163,7 +163,9 @@ export const getZabbixStatus = createServerFn({ method: "GET" }).handler(async (
   const names = (d.prepare("SELECT name FROM pops").all() as { name: string }[]).map((p) => p.name);
   const z = await import("@/server/zabbix.server");
   const links = d.prepare("SELECT * FROM links ORDER BY id").all() as Link[];
-  return z.getStatus(names, links);
+  const status = await z.getStatus(names, links);
+  const { parksStatus } = await import("./parks-status");
+  return { ...status, byName: parksStatus(status.byName, names) };
 });
 
 export const getPadtecOpticalItems = createServerFn({ method: "GET" }).handler(async () => {

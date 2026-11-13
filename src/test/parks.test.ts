@@ -14,3 +14,15 @@ describe("Parks DWDM", () => {
     expect(PARKS_SEGMENTS.map((s) => s.item)).toEqual(["165046", "168217"]);
   });
 });
+
+import { parksStatus } from "@/lib/parks-status";
+describe("Parks marker status", () => {
+  it("follows its switch, ignoring non-Parks alarms", () => {
+    const r = parksStatus({ "sw-lagarto": { state: "warning", problems: [{ name: "WIFI/ENERGIA down" }] } }, ["parks-lagarto"]);
+    expect(r["parks-lagarto"]?.state).toBe("ok");
+  });
+  it("stays unknown when the switch is unknown", () => {
+    const r = parksStatus({ "sw-aracaju": { state: "unknown", problems: [] } }, ["parks-aracaju"]);
+    expect(r["parks-aracaju"]?.state).toBe("unknown");
+  });
+});
