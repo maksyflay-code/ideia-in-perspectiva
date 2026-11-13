@@ -18,7 +18,7 @@ describe("Parks DWDM", () => {
 import { parksStatus } from "@/lib/parks-status";
 describe("Parks marker status", () => {
   it("follows its switch, ignoring non-Parks alarms", () => {
-    const r = parksStatus({ "sw-lagarto": { state: "warning", problems: [{ description: "WIFI/ENERGIA down" }] } }, ["parks-lagarto"]);
+    const r = parksStatus({ "sw-lagarto": { state: "warning", problems: [{ name: "WIFI/ENERGIA down" }] } }, ["parks-lagarto"]);
     expect(r["parks-lagarto"]?.state).toBe("ok");
   });
   it("stays unknown when the switch is unknown", () => {
