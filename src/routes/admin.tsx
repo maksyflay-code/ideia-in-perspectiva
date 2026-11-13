@@ -285,11 +285,11 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
         setBusy("missing"); setMsg("");
         try {
           const r = await importMissingLinks();
-          setMsg(`${r.added} ligação(ões) criada(s), ${r.existed} já existia(m). Sem monitoramento: ficam animadas e não ficam vermelhas.`);
+          setMsg(`${r.added} ligação(ões) criada(s), ${r.existed} já existia(m), ${r.monitored} recebeu(ram) monitoramento. Só Picos–Vila Nova fica sem monitoramento.`);
           onChange();
         } catch (e) { setMsg(e instanceof Error ? e.message : "Erro ao criar ligações"); } finally { setBusy(""); }
       }}>
-        {busy === "missing" ? "Criando…" : "Criar ligações Lagoa 33–Angical, Catuaba–Cafarnaum e Padtec Picos–Vila Nova"}
+        {busy === "missing" ? "Criando…" : "Criar ligações Lagoa 33–Angical, Catuaba–Cafarnaum, Cícero–Lagarto–Aracaju e Padtec Picos–Vila Nova"}
       </Button>
       <Button type="button" variant="outline" size="sm" disabled={!!busy} className="h-auto whitespace-normal" onClick={async () => {
         setBusy("parks"); setMsg("");
