@@ -8,13 +8,14 @@ type Camera = {
 export function equipmentType(name: string) {
   if (/^padtec-/i.test(name)) return "padtec";
   if (/^eci-/i.test(name)) return "eci";
+  if (/^parks-/i.test(name)) return "parks";
   return "sw";
 }
 
 /** Marker label: switches show only the site name, DWDM keeps the brand on its own line. */
 export function mapLabel(name: string) {
   if (equipmentType(name) === "sw") return name.replace(/^sw-/i, "");
-  return name.replace(/^(padtec|eci)-/i, "$1\n");
+  return name.replace(/^(padtec|eci|parks)-/i, "$1\n");
 }
 
 /** Screen-only displacement; both markers and fiber paths use these positions. */

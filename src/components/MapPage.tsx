@@ -50,7 +50,7 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
         </header>
         <nav aria-label="Mapas" className="grid grid-cols-2 gap-1 border-b p-2 text-xs">
           <Link to="/" className={`rounded-md px-3 py-2 text-center ${kind === "sw" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>Switches</Link>
-          <Link to="/dwdm" className={`rounded-md px-3 py-2 text-center ${kind === "dwdm" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>DWDM Padtec / ECI</Link>
+          <Link to="/dwdm" className={`rounded-md px-3 py-2 text-center ${kind === "dwdm" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"}`}>DWDM Padtec / ECI / Parks</Link>
         </nav>
         {zbx?.enabled && (
           <div className="border-b px-4 py-2 text-xs">
