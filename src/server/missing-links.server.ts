@@ -31,7 +31,7 @@ export function importMissingLinks(d: Db) {
       if (links.some((k) => (k.from_pop === x && k.to_pop === y) || (k.from_pop === y && k.to_pop === x))) existed++;
       else plan.push([x, y, l.monitor?.host ?? "", l.monitor?.item ?? ""]);
     }
-    const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0?,?,?,'interface','')");
+    const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0,?,?,'interface','')");
     for (const [x, y, host, item] of plan) ins.run(x, y, host, item);
     d.exec("COMMIT");
     return { added: plan.length, existed };
