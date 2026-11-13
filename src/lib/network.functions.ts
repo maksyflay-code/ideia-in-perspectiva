@@ -248,3 +248,9 @@ export const importMissingLinks = createServerFn({ method: "POST" }).handler(asy
   const service = await import("@/server/missing-links.server");
   return service.importMissingLinks(await db());
 });
+
+export const importParksSegments = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/parks.server");
+  return service.importParks(await db());
+});
