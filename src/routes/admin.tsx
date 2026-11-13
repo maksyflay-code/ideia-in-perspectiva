@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { PENDING_NOTE, deleteItem, importChapadaCoite, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importChapadaCoite, importMissingLinks, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
@@ -280,6 +280,16 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
         }
       }}>
         {busy === "chapada-coite" ? "Cadastrando…" : "Cadastrar sw-chapada-coite"}
+      </Button>
+      <Button type="button" variant="outline" size="sm" disabled={!!busy} className="h-auto whitespace-normal" onClick={async () => {
+        setBusy("missing"); setMsg("");
+        try {
+          const r = await importMissingLinks();
+          setMsg(`${r.added} ligação(ões) criada(s), ${r.existed} já existia(m). Sem monitoramento: ficam animadas e não ficam vermelhas.`);
+          onChange();
+        } catch (e) { setMsg(e instanceof Error ? e.message : "Erro ao criar ligações"); } finally { setBusy(""); }
+      }}>
+        {busy === "missing" ? "Criando…" : "Criar ligações Lagoa 33–Angical, Catuaba–Cafarnaum e Padtec Picos–Vila Nova"}
       </Button>
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </div>
