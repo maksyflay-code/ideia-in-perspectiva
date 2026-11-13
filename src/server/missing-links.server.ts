@@ -3,10 +3,11 @@ import type { Db } from "./db.server";
 type Pop = { id: number; name: string };
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "");
 
-/** Admin-confirmed links; created unmonitored because no port/alarm was supplied for them. */
-export const MISSING_LINKS: { label: string; a: string[]; b: string[] }[] = [
-  { label: "Lagoa 33 ↔ Angical (switch)", a: ["sw-lagoa33"], b: ["sw-angical"] },
-  { label: "Catuaba ↔ Cafarnaum (switch)", a: ["sw-catuaba"], b: ["sw-cafarnaum"] },
+/** Admin-confirmed links. Switch links monitor the ifOperStatus port confirmed via Zabbix;
+ *  Picos ↔ Vila Nova stays unmonitored: no Padtec loss alarm names that pair. */
+export const MISSING_LINKS: { label: string; a: string[]; b: string[]; monitor?: { host: string; item: string } }[] = [
+  { label: "Lagoa 33 ↔ Angical (switch)", a: ["sw-lagoa33"], b: ["sw-angical"], monitor: { host: "sw-angical", item: "167218" } },
+  { label: "Catuaba ↔ Cafarnaum (switch)", a: ["sw-catuaba"], b: ["sw-cafarnaum"], monitor: { host: "sw-cafarnaum", item: "171878" } },
   { label: "Picos ↔ Vila Nova (Padtec)", a: ["padtec-picos", "padtec-pcz"], b: ["padtec-vilanova", "padtec-vln"] },
 ];
 
