@@ -21,7 +21,7 @@ export function importMissingLinks(d: Db) {
   try {
     const pops = d.prepare("SELECT id, name FROM pops").all() as Pop[];
     const links = d.prepare("SELECT from_pop, to_pop FROM links").all() as { from_pop: number; to_pop: number }[];
-    const plan: [number, number][] = [];
+    const plan: [number, number, string, string][] = [];
     let existed = 0;
     for (const l of MISSING_LINKS) {
       const a = resolve(pops, l.a), b = resolve(pops, l.b);
@@ -29,10 +29,10 @@ export function importMissingLinks(d: Db) {
         throw new Error(`Nenhuma ligação criada: ${l.label} — ponto ${a.length !== 1 ? l.a[0] : l.b[0]} ${(a.length || b.length) > 1 ? "duplicado" : "não encontrado"}`);
       const x = a[0]!.id, y = b[0]!.id;
       if (links.some((k) => (k.from_pop === x && k.to_pop === y) || (k.from_pop === y && k.to_pop === x))) existed++;
-      else plan.push([x, y]);
+      else plan.push([x, y, l.monitor?.host ?? "", l.monitor?.item ?? ""]);
     }
-    const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0,'','','interface','')");
-    for (const [x, y] of plan) ins.run(x, y);
+    const ins = d.prepare("INSERT INTO links (from_pop,to_pop,distance_km,zabbix_host,zabbix_item,monitor_kind,optical_down_value) VALUES (?,?,0?,?,?,'interface','')");
+    for (const [x, y, host, item] of plan) ins.run(x, y, host, item);
     d.exec("COMMIT");
     return { added: plan.length, existed };
   } catch (e) { d.exec("ROLLBACK"); throw e; }
