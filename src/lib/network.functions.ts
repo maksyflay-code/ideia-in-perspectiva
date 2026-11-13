@@ -174,6 +174,12 @@ export const getPadtecOpticalItems = createServerFn({ method: "GET" }).handler(a
 
 export const PENDING_NOTE = "Localização pendente — ajuste latitude/longitude";
 
+export const importChapadaCoite = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/chapada-coite.server");
+  return service.registerChapadaCoite(await db());
+});
+
 export const importZabbixHosts = createServerFn({ method: "POST" })
   .inputValidator(z.object({ prefix: z.string().max(50).default("sw-") }))
   .handler(async ({ data }) => {
