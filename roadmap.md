@@ -1,6 +1,7 @@
 # Tarefas
-- [ ] Ampliar alarmes das Lines Padtec confirmadas para Loss, Sync e LOF, com testes.
-- [ ] Adicionar ação Santa Luzia–Paulo Afonso preservando configurações existentes e monitorando ambas as pontas.
+- [x] Ampliar alarmes das Lines Padtec confirmadas para Loss, Sync e LOF; testes de estado e consulta Zabbix passaram, preservando switches em falha da consulta óptica.
+- [x] Adicionar ação Santa Luzia–Paulo Afonso com validação ao vivo das duas Lines, persistência, repetição e preservação testadas.
+- [ ] Aplicar Santa Luzia–Paulo Afonso e conferir estados reais na VM após atualizar; Zabbix indisponível nesta prévia e login admin não concluído.
 - [ ] Investigar Olindina e Monte Gordo; coletar portas na VM porque os arquivos enviados não contêm suas interfaces e não há Zabbix configurado nesta prévia.
 - [x] Preparar botão admin para cadastrar sw-chapada-coite no ponto indicado com IDs 186132/186133 nas observações, sem inventar destinos; 17 testes passaram, incluindo gravação/releitura SQLite e repetição sem duplicidade.
 - [ ] Executar cadastro de Chapada Coité na VM após atualização; entrada admin não concluiu nesta prévia. Ligação Juazeirinho depende de identificar o equipamento de destino; Tely/TIM é saída de operadora sem ponto confirmado.
@@ -20,7 +21,7 @@
 - [ ] Conferir destinos reais e importar na VM; bloqueado pelo acesso ao Zabbix disponível somente na VM.
 - [x] Incluir cadastro e monitoramento de alarme óptico Padtec sem alterar os switches.
 - [x] Validar persistência SQLite, 43 testes e formulário com sessão admin em computador e celular.
-- [ ] Confirmar Line e significado do alarme de Santa Luzia; bloqueado pela ausência de configuração Zabbix nesta prévia. Consultar na VM e confirmar o trecho antes de salvar.
+- [x] Confirmar Line e significado do alarme de Santa Luzia pelos arquivos enviados; ambas as pontas identificadas, aplicação na VM pendente acima.
 - [x] Aproximar os equipamentos na mesma localização e diferenciar as cores dos pontos DWDM por estado.
 - [x] Separar equipamentos próximos apenas na apresentação do mapa.
 - [x] Destacar ligações Padtec/ECI com raios verdes e validar os estados em testes e cenário visual.

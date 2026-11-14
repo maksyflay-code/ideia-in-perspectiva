@@ -17,6 +17,8 @@ export const SANTA_LUZIA_PAF_ALARMS = [
 type LineItem = InterfaceItem & { valuemap?: { mappings?: { value: string; newvalue: string }[] } };
 /** Only the same card and Line participate; siblings must explicitly confirm binary alarm polarity. */
 export function opticalLineStatus(items: LineItem[], lossKey: string, link: Link, now = Date.now()): LinkStatus {
+  if (link.optical_down_value !== "0" && link.optical_down_value !== "1")
+    return { state: "unknown", message: "Significado do alarme óptico ainda não confirmado" };
   const keys = opticalLineKeys(lossKey);
   if (!keys.length) return { state: "unknown", message: "Line Padtec não identificada" };
   const readings = keys.map((key, index): LinkStatus => {

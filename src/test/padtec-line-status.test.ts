@@ -8,6 +8,7 @@ const link: Link = { id: 1, from_pop: 1, to_pop: 2, distance_km: 0, monitor_kind
 const mappings = [{ value: "1", newvalue: "active alarm" }, { value: "0", newvalue: "no alarm" }];
 const items = opticalLineKeys(key).map((key_, index) => ({ itemid: String(index), key_, lastvalue: "0", lastclock: String(now / 1000), status: "0", state: "0", hosts: [{ host: "Padtec - Servidor" }], valuemap: { mappings } }));
 describe("Complete confirmed Padtec Line alarms", () => {
+  it("requires admin-confirmed Line polarity even for an active sibling", () => expect(opticalLineStatus(items.map((i) => ({ ...i, lastvalue: "1" })), key, { ...link, optical_down_value: "" }, now).state).toBe("unknown"));
   it("marks fresh Loss 1 as down", () => expect(opticalLineStatus(items.map((i, n) => n === 0 ? { ...i, lastvalue: "1" } : i), key, link, now).state).toBe("down"));
   it("marks fresh Sync 1 as down", () => expect(opticalLineStatus(items.map((i, n) => n === 1 ? { ...i, lastvalue: "1" } : i), key, link, now).state).toBe("down"));
   it("marks fresh OTU LOF 1 as down", () => expect(opticalLineStatus(items.map((i, n) => n === 2 ? { ...i, lastvalue: "1" } : i), key, link, now).state).toBe("down"));
