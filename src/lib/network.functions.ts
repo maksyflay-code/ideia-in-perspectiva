@@ -262,3 +262,9 @@ export const importParksSegments = createServerFn({ method: "POST" }).handler(as
   const service = await import("@/server/parks.server");
   return service.importParks(await db());
 });
+
+export const importOlindinaMontegordo = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/olindina-montegordo.server");
+  return service.importOlindinaMontegordo(await db());
+});

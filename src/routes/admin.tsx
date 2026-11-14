@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { PENDING_NOTE, deleteItem, importChapadaCoite, importMissingLinks, importParksSegments, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importChapadaCoite, importMissingLinks, importOlindinaMontegordo, importParksSegments, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
@@ -266,6 +267,7 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
         </button>
       </div>
       <DwdmImport onChange={onChange} />
+      <OlindinaMontegordoImport onChange={onChange} />
       <Button type="button" variant="outline" size="sm" disabled={!!busy} className="h-auto whitespace-normal" onClick={async () => {
         setBusy("chapada-coite");
         setMsg("");
@@ -304,6 +306,24 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
       {msg && <p className="text-xs text-muted-foreground">{msg}</p>}
     </div>
   );
+}
+
+function OlindinaMontegordoImport({ onChange }: { onChange: () => void }) {
+  const run = useServerFn(importOlindinaMontegordo);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  return <div className="space-y-2">
+    <Button type="button" variant="outline" size="sm" className="h-auto whitespace-normal" disabled={busy} onClick={async () => {
+      setBusy(true); setMessage("");
+      try {
+        const r = await run();
+        setMessage(`${r.added} ligações criadas · ${r.monitored} monitoramentos aplicados · ${r.existed} já configuradas · ${r.preserved} configurações preservadas. Monte Gordo: CETREL 77008 e Guarajuba 77009.`);
+        onChange();
+      } catch (e) { setMessage(e instanceof Error ? e.message : "Erro ao criar ligações"); }
+      finally { setBusy(false); }
+    }}>{busy ? "Criando…" : "Criar ligações Olindina e Monte Gordo (4 portas)"}</Button>
+    {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
+  </div>;
 }
 
 function PopSelect({ name, net, value }: { name: string; net: Network; value?: number | undefined }) {
