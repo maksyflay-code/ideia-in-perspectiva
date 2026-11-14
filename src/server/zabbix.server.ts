@@ -110,10 +110,15 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
           return SANTA_LUZIA_PAF_ALARMS.some((a) => a.item === l.zabbix_item.trim() && a.key === key)
             ? SANTA_LUZIA_PAF_ALARMS.flatMap((a) => opticalLineKeys(a.key)) : opticalLineKeys(key);
         }))];
-        const lineItems = keys.length ? await call(c, "item.get", {
-          output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
-          filter: { key_: keys }, selectHosts: ["host"], selectValueMap: "extend",
-        }) as OpticalItem[] : [];
+        let lineItems: OpticalItem[] = [];
+        if (keys.length) {
+          try {
+            lineItems = await call(c, "item.get", {
+              output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
+              filter: { key_: keys }, selectHosts: ["host"], selectValueMap: "extend",
+            }) as OpticalItem[];
+          } catch { /* Padtec lookup failure must not discard valid switch port readings. */ }
+        }
         for (const l of monitored) {
           if (l.monitor_kind !== "padtec_loss") {
             byLink[String(l.id)] = interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
