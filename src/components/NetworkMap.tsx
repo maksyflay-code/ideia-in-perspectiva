@@ -223,7 +223,7 @@ export default function NetworkMap({
         const from = current.network.pops.find((p) => p.id === link.from_pop)?.name ?? "?";
         const to = current.network.pops.find((p) => p.id === link.to_pop)?.name ?? "?";
         const state = linkVisualState(link, current.zabbix);
-        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarmes Loss, Sync ou LOF" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento" };
+        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarme de perda de sinal" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento" };
         const message = current.zabbix?.byLink?.[String(id)]?.message;
         new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat)
           .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message && message !== labels[state] ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);
