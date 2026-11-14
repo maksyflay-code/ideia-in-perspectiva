@@ -33,7 +33,7 @@ export function opticalLineStatus(items: LineItem[], lossKey: string, link: Link
       polarity = active[0]?.value;
     }
     // Reuse strict freshness and host checks after matching the sibling to this exact Line.
-    const status = opticalStatus({ ...item, key_: lossKey }, { ...link, optical_down_value: polarity }, now);
+    const status = opticalStatus({ ...item, key_: lossKey }, { ...link, optical_down_value: polarity ?? "" }, now);
     return status.state === "down" ? { state: "down", message: ["Perda de sinal na Line", "Perda de sincronismo na Line", "Perda de enquadramento (LOF) na Line"][index] ?? "Alarme da Line" } : status;
   });
   const down = readings.find((r) => r.state === "down");
