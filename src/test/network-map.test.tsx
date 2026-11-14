@@ -116,6 +116,27 @@ describe("Equipamentos sobrepostos", () => {
     view.rerender(<NetworkMap network={net} channelId={null} zabbix={status("up")} />);
     expect(mock.sources["links"].data.features[0].properties.state).toBe("up");
   });
+  it("atualiza suspeita das duas pontas e para raios sem alterar links monitorados", () => {
+    const net: Network = {
+      pops: [
+        { id: 1, name: "padtec-mossoro", city: "Mossoró", lat: -5, lng: -37, notes: "" },
+        { id: 2, name: "padtec-santa-luzia", city: "Santa Luzia", lat: -6, lng: -36, notes: "" },
+      ],
+      links: [{ id: 1, from_pop: 1, to_pop: 2, distance_km: 100, zabbix_host: "", zabbix_item: "" }], channels: [],
+    };
+    const critical = { state: "down" as const, problems: [{ name: "Alarme", severity: 4 }] };
+    const request = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
+    const view = render(<NetworkMap network={net} channelId={null} />);
+    act(() => mock.handlers["load"]?.());
+    view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: { "padtec-mossoro": critical, "padtec-santa-luzia": critical } }} />);
+    expect(mock.sources["links"].data.features[0].properties.state).toBe("suspect");
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(false);
+    act(() => request.mock.calls.at(-1)?.[0]?.(200));
+    expect(mock.sources["dwdm-bolts"].data.features).toHaveLength(0);
+    view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: { "padtec-mossoro": critical, "padtec-santa-luzia": { state: "ok", problems: [] } } }} />);
+    expect(mock.sources["links"].data.features[0].properties.state).toBe("unmonitored");
+    expect(mock.sources["links"].data.features[0].properties.flowing).toBe(true);
+  });
   it("restaura animação decorativa sem porta configurada, mesmo com alarmes nos POPs", () => {
     const link = { id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "" };
     const net: Network = { ...network, links: [link] };
