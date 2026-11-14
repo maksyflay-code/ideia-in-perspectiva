@@ -3,7 +3,8 @@
 - [x] Adicionar ação Santa Luzia–Paulo Afonso com validação ao vivo das duas Lines, persistência, repetição e preservação testadas.
 - [ ] Aplicar Santa Luzia–Paulo Afonso e conferir estados reais na VM após atualizar; Zabbix indisponível nesta prévia e login admin não concluído.
 - [x] Investigar Olindina e Monte Gordo no arquivo coletado; destinos confirmados pelo usuário, com duas portas distintas para Telxius1.
-- [ ] Criar e testar botão das quatro ligações confirmadas; aplicar na VM depende de atualização e ação no Admin.
+- [x] Criar ação Admin das quatro ligações confirmadas; 19 testes passaram, incluindo SQLite, portas distintas, repetição e preservação. Compilação sem erros.
+- [ ] Aplicar Olindina e Monte Gordo e conferir portas reais na VM após atualização e ação no Admin; acesso admin da prévia não concluído, dados reais disponíveis apenas na VM.
 - [x] Preparar botão admin para cadastrar sw-chapada-coite no ponto indicado com IDs 186132/186133 nas observações, sem inventar destinos; 17 testes passaram, incluindo gravação/releitura SQLite e repetição sem duplicidade.
 - [ ] Executar cadastro de Chapada Coité na VM após atualização; entrada admin não concluiu nesta prévia. Ligação Juazeirinho depende de identificar o equipamento de destino; Tely/TIM é saída de operadora sem ponto confirmado.
 - [x] Centralizar login e substituir superfícies brancas por escuras, com texto claro e marca preservada; posição e acesso conferidos em computador/celular, 10 testes passaram. Legenda com leituras reais depende do Zabbix na VM.
