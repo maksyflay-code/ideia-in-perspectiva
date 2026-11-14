@@ -22,7 +22,7 @@ export function interfaceStatus(item: InterfaceItem | undefined, host: string, n
 export function linkVisualState(link: Link, z?: {
   enabled: boolean; error?: string; byLink?: Record<string, LinkStatus>;
   byName?: Record<string, { state: string; problems: { name: string; severity: number }[] }>;
-}, endpoints?: { from?: Pick<Pop, "name">; to?: Pick<Pop, "name"> }): "up" | "down" | "unknown" | "unmonitored" | "suspect" {
+}, endpoints?: { from?: Pick<Pop, "name"> | undefined; to?: Pick<Pop, "name"> | undefined }): "up" | "down" | "unknown" | "unmonitored" | "suspect" {
   if (!link.zabbix_item.trim()) {
     const names = [endpoints?.from?.name, endpoints?.to?.name];
     const bothCritical = z?.enabled && !z.error && names.every((name) => {
