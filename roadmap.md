@@ -1,5 +1,6 @@
 # Tarefas
-- [ ] Acrescentar suspeita amarela nos trechos Padtec sem monitoramento quando ambas as pontas estão críticas, preservando todos os estados monitorados e validando a prioridade do vermelho.
+- [x] Acrescentar suspeita amarela nos trechos Padtec sem monitoramento quando ambas as pontas estão críticas, preservando todos os estados monitorados; 52 testes passaram e compilação sem erros.
+- [ ] Conferir suspeitas amarelas com alarmes reais na VM após atualização; Zabbix e dados reais disponíveis somente na VM.
 - [x] Retirar Sync/LOF da consulta ativa Padtec a pedido do usuário; restaurar interpretação Loss anterior sem alterar os cadastros ou os switches.
 - [x] Ampliar alarmes das Lines Padtec confirmadas para Loss, Sync e LOF; testes de estado e consulta Zabbix passaram, preservando switches em falha da consulta óptica.
 - [x] Adicionar ação Santa Luzia–Paulo Afonso com validação ao vivo das duas Lines, persistência, repetição e preservação testadas.
