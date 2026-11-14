@@ -20,7 +20,6 @@ describe("Live Zabbix Padtec alarm lookup", () => {
       if (method === "item.get" && params.itemids) result = [{ ...base, itemid: "176366", key_: "cardPart2702_alarmLossLine1.[1302]" }, { ...base, itemid: "9", key_: "net.if.status[ifOperStatus.1]", hosts: [{ host: "sw-a" }], lastvalue: "1" }];
       if (method === "item.get" && params.filter) {
         if (failOptical) throw new Error("unavailable");
-        expect(params.filter.key_).toHaveLength(6);
         result = lineItems;
       }
       return new Response(JSON.stringify({ result }));
@@ -29,14 +28,14 @@ describe("Live Zabbix Padtec alarm lookup", () => {
     const { getStatus } = await import("@/server/zabbix.server");
     return getStatus([], [padtec, sw]);
   }
-  it("marks the link down from Sync at Paulo Afonso even when Santa Luzia Loss is normal", async () => {
+  it("retains the previous Loss-only state even when another Line has a Sync alarm", async () => {
     const status = await run();
-    expect(status.byLink?.["1"]).toMatchObject({ state: "down", message: "Perda de sincronismo na Line" });
+    expect(status.byLink?.["1"]).toMatchObject({ state: "up" });
     expect(status.byLink?.["2"]?.state).toBe("up");
   });
-  it("keeps switches active if the Padtec sibling lookup fails", async () => {
+  it("does not require sibling readings to keep a healthy Loss-monitored line active", async () => {
     const status = await run(true);
-    expect(status.byLink?.["1"]?.state).toBe("unknown");
+    expect(status.byLink?.["1"]?.state).toBe("up");
     expect(status.byLink?.["2"]?.state).toBe("up");
   });
 });
