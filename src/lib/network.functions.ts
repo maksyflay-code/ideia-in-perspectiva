@@ -225,6 +225,12 @@ export const importConfirmedPadtecRings = createServerFn({ method: "POST" }).han
   return service.importPadtecRings(await db());
 });
 
+export const connectConfirmedSantaLuziaPaf = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/dwdm.server");
+  return service.connectSantaLuziaPaf(await db());
+});
+
 export const applyConfirmedEciMonitoring = createServerFn({ method: "POST" }).handler(async () => {
   await (await auth()).requireAdmin();
   const service = await import("@/server/dwdm.server");

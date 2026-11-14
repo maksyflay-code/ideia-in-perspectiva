@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Download, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { reviewDwdmLinks, importDwdmLinks, importConfirmedEciRing, applyConfirmedEciMonitoring, connectConfirmedIrece, importConfirmedPadtecRings } from "@/lib/network.functions";
+import { reviewDwdmLinks, importDwdmLinks, importConfirmedEciRing, applyConfirmedEciMonitoring, connectConfirmedIrece, importConfirmedPadtecRings, connectConfirmedSantaLuziaPaf } from "@/lib/network.functions";
 import type { DwdmKind } from "@/lib/dwdm-discovery";
 
 export default function DwdmImport({ onChange }: { onChange: () => void }) {
@@ -12,6 +12,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
   const monitoringFn = useServerFn(applyConfirmedEciMonitoring);
   const ireceFn = useServerFn(connectConfirmedIrece);
   const padtecRingsFn = useServerFn(importConfirmedPadtecRings);
+  const santaLuziaFn = useServerFn(connectConfirmedSantaLuziaPaf);
   const [kind, setKind] = useState<DwdmKind>("padtec");
   const [review, setReview] = useState<Awaited<ReturnType<typeof reviewDwdmLinks>> | null>(null);
   const [destinations, setDestinations] = useState<Record<string, string>>({});
@@ -20,11 +21,20 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const choices = (review?.references ?? []).filter((r) => selected[r.key] && destinations[r.key]).map((r) => ({ key: r.key, to: destinations[r.key] ?? "" }));
+  async function connectSantaLuzia() {
+    setBusy(true); setMsg("");
+    try {
+      const r = await santaLuziaFn();
+      setMsg(`Santa Luzia ↔ Paulo Afonso: ${r.added} ligação criada · ${r.applied} monitoramento aplicado (Loss, Sync e LOF nas duas pontas) · ${r.preserved} configuração existente preservada`);
+      onChange();
+    } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível conectar Santa Luzia a Paulo Afonso"); }
+    finally { setBusy(false); }
+  }
   async function savePadtecRings() {
     setBusy(true); setMsg("");
     try {
       const r = await padtecRingsFn();
-      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · ${r.monitored} com alarme de perda de sinal`);
+      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · ${r.monitored} com alarmes de Line (Loss, Sync e LOF)`);
       onChange();
     } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível importar os anéis Padtec"); }
     finally { setBusy(false); }
@@ -78,6 +88,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
     <div className="flex flex-wrap gap-2">
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={saveRing}><Download />Importar anel ECI (11 ligações)</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={savePadtecRings}><Download />Importar anéis Padtec (41 ligações)</Button>
+      <Button type="button" variant="outline" size="sm" disabled={busy} className="h-auto whitespace-normal" onClick={connectSantaLuzia}><Activity />Monitorar Santa Luzia–Paulo Afonso</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={applyMonitoring}><Activity />Aplicar monitoramento OSC do anel ECI</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={addIrece}><Activity />Conectar Irecê a Cafarnaum com OSC</Button>
       <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => consult("padtec")}><Search />Consultar todas as saídas Padtec</Button>
