@@ -1,7 +1,7 @@
 // Read-only Zabbix client. Credentials come from ZABBIX_URL / ZABBIX_USER / ZABBIX_PASSWORD.
 import type { Link } from "@/lib/network.types";
 import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
-import { opticalLineStatus, opticalLossKey, opticalLineKeys, SANTA_LUZIA_PAF_ALARMS } from "@/lib/optical-status";
+import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
 import type { DiscoveryItem, DwdmKind } from "@/lib/dwdm-discovery";
 export type PopStatus = {
   state: "ok" | "warn" | "down" | "unknown";
@@ -104,31 +104,12 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
           selectHosts: ["host"],
         })) as InterfaceItem[];
         const byId = new Map(items.map((i) => [i.itemid, i]));
-        const optical = monitored.filter((l) => l.monitor_kind === "padtec_loss");
-        const keys = [...new Set(optical.flatMap((l) => {
-          const key = byId.get(l.zabbix_item.trim())?.key_ ?? "";
-          return SANTA_LUZIA_PAF_ALARMS.some((a) => a.item === l.zabbix_item.trim() && a.key === key)
-            ? SANTA_LUZIA_PAF_ALARMS.flatMap((a) => opticalLineKeys(a.key)) : opticalLineKeys(key);
-        }))];
-        let lineItems: OpticalItem[] = [];
-        if (keys.length) {
-          try {
-            lineItems = await call(c, "item.get", {
-              output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
-              filter: { key_: keys }, selectHosts: ["host"], selectValueMap: "extend",
-            }) as OpticalItem[];
-          } catch { /* Padtec lookup failure must not discard valid switch port readings. */ }
-        }
         for (const l of monitored) {
           if (l.monitor_kind !== "padtec_loss") {
             byLink[String(l.id)] = interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
             continue;
           }
-          const key = byId.get(l.zabbix_item.trim())?.key_ ?? "";
-          const ends = SANTA_LUZIA_PAF_ALARMS.some((a) => a.item === l.zabbix_item.trim() && a.key === key)
-            ? SANTA_LUZIA_PAF_ALARMS.map((a) => a.key) : [key];
-          const states = ends.map((end) => opticalLineStatus(lineItems, end, l));
-          byLink[String(l.id)] = states.find((s) => s.state === "down") ?? states.find((s) => s.state === "unknown") ?? states[0] ?? { state: "unknown", message: "Line não identificada" };
+          byLink[String(l.id)] = opticalStatus(byId.get(l.zabbix_item.trim()), l);
         }
       } catch {
         for (const l of monitored) byLink[String(l.id)] = { state: "unknown", message: "Não foi possível consultar a porta no Zabbix" };

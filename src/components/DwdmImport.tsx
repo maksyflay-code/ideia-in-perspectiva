@@ -25,7 +25,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
     setBusy(true); setMsg("");
     try {
       const r = await santaLuziaFn();
-      setMsg(`Santa Luzia ↔ Paulo Afonso: ${r.added} ligação criada · ${r.applied} monitoramento aplicado (Loss, Sync e LOF nas duas pontas) · ${r.preserved} configuração existente preservada`);
+      setMsg(`Santa Luzia ↔ Paulo Afonso: ${r.added} ligação criada · ${r.applied} monitoramento de Loss aplicado · ${r.preserved} configuração existente preservada`);
       onChange();
     } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível conectar Santa Luzia a Paulo Afonso"); }
     finally { setBusy(false); }
@@ -34,7 +34,7 @@ export default function DwdmImport({ onChange }: { onChange: () => void }) {
     setBusy(true); setMsg("");
     try {
       const r = await padtecRingsFn();
-      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · ${r.monitored} com alarmes de Line (Loss, Sync e LOF)`);
+      setMsg(`Anéis Padtec: ${r.added} ligações criadas · ${r.existed} já existentes · ${r.monitored} com alarmes Loss de Line`);
       onChange();
     } catch (e) { setMsg(e instanceof Error ? e.message : "Não foi possível importar os anéis Padtec"); }
     finally { setBusy(false); }

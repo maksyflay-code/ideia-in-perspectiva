@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Retirar Sync/LOF da consulta ativa Padtec a pedido do usuário; restaurar interpretação Loss anterior sem alterar os cadastros ou os switches.
 - [x] Ampliar alarmes das Lines Padtec confirmadas para Loss, Sync e LOF; testes de estado e consulta Zabbix passaram, preservando switches em falha da consulta óptica.
 - [x] Adicionar ação Santa Luzia–Paulo Afonso com validação ao vivo das duas Lines, persistência, repetição e preservação testadas.
 - [ ] Aplicar Santa Luzia–Paulo Afonso e conferir estados reais na VM após atualizar; Zabbix indisponível nesta prévia e login admin não concluído.
