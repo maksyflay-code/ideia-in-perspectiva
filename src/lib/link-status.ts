@@ -1,4 +1,4 @@
-import type { Link } from "./network.types";
+import type { Link, Pop } from "./network.types";
 
 export type LinkStatus = { state: "up" | "down" | "unknown"; message: string };
 export type InterfaceItem = {
@@ -21,8 +21,17 @@ export function interfaceStatus(item: InterfaceItem | undefined, host: string, n
 
 export function linkVisualState(link: Link, z?: {
   enabled: boolean; error?: string; byLink?: Record<string, LinkStatus>;
-}): "up" | "down" | "unknown" | "unmonitored" {
-  if (!link.zabbix_item.trim()) return "unmonitored";
+  byName?: Record<string, { state: string; problems: { name: string; severity: number }[] }>;
+}, endpoints?: { from?: Pick<Pop, "name"> | undefined; to?: Pick<Pop, "name"> | undefined }): "up" | "down" | "unknown" | "unmonitored" | "suspect" {
+  if (!link.zabbix_item.trim()) {
+    const names = [endpoints?.from?.name, endpoints?.to?.name];
+    const bothCritical = z?.enabled && !z.error && names.every((name) => {
+      if (!name?.startsWith("padtec-")) return false;
+      const status = z.byName?.[name];
+      return status?.state === "down" && status.problems.some((p) => p.severity >= 4);
+    });
+    return bothCritical ? "suspect" : "unmonitored";
+  }
   if (!z?.enabled || z.error) return "unknown";
   return z.byLink?.[String(link.id)]?.state ?? "unknown";
 }

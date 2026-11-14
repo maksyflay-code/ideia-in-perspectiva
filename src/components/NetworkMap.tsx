@@ -41,7 +41,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         const from = byId.get(l.from_pop);
         const to = byId.get(l.to_pop);
         if (!from || !to) return [];
-        const state = linkVisualState(l, z);
+        const state = linkVisualState(l, z, { from, to });
         return [{
         type: "Feature" as const,
          properties: { id: l.id, km: l.distance_km, state, dwdm: isDwdmLink(from, to), flowing: state === "up" || state === "unmonitored" },
@@ -204,6 +204,7 @@ export default function NetworkMap({
       m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
+      m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["==", ["get", "state"], "suspect"], paint: { "line-color": standby, "line-width": 4 } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
@@ -220,10 +221,12 @@ export default function NetworkMap({
         const current = latest.current;
         const link = current.network.links.find((l) => l.id === id);
         if (!link) return;
-        const from = current.network.pops.find((p) => p.id === link.from_pop)?.name ?? "?";
-        const to = current.network.pops.find((p) => p.id === link.to_pop)?.name ?? "?";
-        const state = linkVisualState(link, current.zabbix);
-        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarme de perda de sinal" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento" };
+        const fromPop = current.network.pops.find((p) => p.id === link.from_pop);
+        const toPop = current.network.pops.find((p) => p.id === link.to_pop);
+        const from = fromPop?.name ?? "?";
+        const to = toPop?.name ?? "?";
+        const state = linkVisualState(link, current.zabbix, { from: fromPop, to: toPop });
+        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarme de perda de sinal" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento", suspect: "Suspeita · alarmes críticos nas duas pontas; falha do trecho não confirmada" };
         const message = current.zabbix?.byLink?.[String(id)]?.message;
         new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat)
           .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message && message !== labels[state] ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);

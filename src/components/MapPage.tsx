@@ -67,6 +67,10 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
           </div>
         )}
         <div className="flex-1 overflow-auto p-3">
+          {kind === "dwdm" && <div aria-label="Estado das ligações" className="mb-3 flex flex-wrap gap-3 border-b pb-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-1 w-5 bg-destructive" /> Falha confirmada</span>
+            <span className="flex items-center gap-1"><span className="h-1 w-5 bg-standby" /> Suspeita nas duas pontas</span>
+          </div>}
           <p className="mb-2 px-1 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Canais</p>
           <button
             onClick={() => setChannelId(null)}
