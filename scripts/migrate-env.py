@@ -42,7 +42,8 @@ else:
     print(".env já estava completo - nada a gravar")
 
 os.chmod(ENV, 0o600)
-missing = [k for k in ("ZABBIX_PASSWORD", "SESSION_SECRET") if k not in existing and k not in found]
+missing = [k for k in ("ZABBIX_PASSWORD", "SESSION_SECRET")
+           if k not in existing and k not in found]
 if missing:
     print("ATENCAO: sem valor para", ", ".join(missing), "- preencha no .env")
 print("OK")
