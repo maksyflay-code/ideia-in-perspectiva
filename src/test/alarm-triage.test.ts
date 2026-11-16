@@ -58,14 +58,14 @@ describe("Consultor local de alarme", () => {
   it("lista os trechos que saem do único equipamento identificado", () => {
     const r = run("sw-serrinha: Ethernet1/1 ifOperStatus down");
     expect(r.devices).toEqual([{ name: "sw-serrinha", via: "texto" }]);
-    expect(r.candidates.map((c) => c.linkId)).toEqual([1, 3]);
+    expect(r.candidates.map((c) => c.linkId)).toEqual([3, 1]);
     expect(r.candidates.every((c) => c.confidence === "baixa")).toBe(true);
     expect(r.signals).toContain("porta de interface caída");
   });
 
   it("sugere o caminho cadastrado quando não há ligação direta", () => {
     const r = run("", ["sw-serrinha", "sw-tucano"]);
-    expect(r.candidates.map((c) => c.linkId)).toEqual([1, 2]);
+    expect(r.candidates.map((c) => c.linkId)).toEqual([2, 1]);
     expect(r.candidates.every((c) => c.confidence === "media")).toBe(true);
     expect(r.candidates[0]!.reasons[0]).toContain("sw-serrinha → sw-juazeiro → sw-tucano");
   });
@@ -81,7 +81,7 @@ describe("Consultor local de alarme", () => {
   it("avisa quando não existe caminho cadastrado entre os equipamentos", () => {
     const r = run("", ["sw-serrinha", "sw-irara"]);
     expect(r.note).toContain("Não há caminho cadastrado entre sw-serrinha e sw-irara");
-    expect(r.candidates.map((c) => c.linkId)).toEqual([1, 3]);
+    expect(r.candidates.map((c) => c.linkId)).toEqual([3, 1]);
     expect(r.candidates.every((c) => c.confidence === "baixa")).toBe(true);
   });
 
