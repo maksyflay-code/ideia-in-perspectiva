@@ -69,7 +69,7 @@ function LoginForm() {
 }
 
 type Tab = "pops" | "links" | "channels";
-type PanelTab = Tab | "traffic";
+type PanelTab = Tab;
 
 function Panel({ user }: { user: string }) {
   const qc = useQueryClient();
