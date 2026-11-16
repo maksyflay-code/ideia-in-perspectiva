@@ -13,9 +13,10 @@ if not os.path.exists(COMPOSE):
     sys.exit("docker-compose.yml não encontrado - rode dentro de /opt/mapa-dwdm")
 
 # valores literais do compose atual (ignora linhas que usam ${VAR})
+# "#M" só é comentário quando vem depois de espaço - senão a senha é cortada
 found = {}
 for line in open(COMPOSE, encoding="utf-8"):
-    m = re.match(r"^\s*([A-Z0-9_]+):\s*(.+?)\s*(?:#.*)?$", line)
+    m = re.match(r"^\s*([A-Z0-9_]+):\s*(.+?)\s*(?:\s+.*)?$", line)
     if not m:
         continue
     k, v = m.group(1), m.group(2).strip().strip('"').strip("'")
