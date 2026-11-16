@@ -57,8 +57,8 @@ describe("Consultor local de alarme", () => {
 
   it("lista os trechos que saem do único equipamento identificado", () => {
     const r = run("sw-serrinha: Ethernet1/1 ifOperStatus down");
-    expect(r.devices).toEqual([{ name: "sw-serrinha", via: "selecao" }].map(() => ({ name: "sw-serrinha", via: "texto" })));
-    expect(r.candidates.map((c) => c.linkId).sort()).toEqual(["1", "3"]);
+    expect(r.devices).toEqual([{ name: "sw-serrinha", via: "texto" }]);
+    expect(r.candidates.map((c) => c.linkId)).toEqual([1, 3]);
     expect(r.candidates.every((c) => c.confidence === "baixa")).toBe(true);
     expect(r.signals).toContain("porta de interface caída");
   });
