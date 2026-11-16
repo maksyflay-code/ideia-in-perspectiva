@@ -47,6 +47,13 @@ async function call(c: NonNullable<ReturnType<typeof cfg>>, method: string, para
   }
 }
 
+// Shared read-only connection for optional metrics; operational status stays independent.
+export async function queryZabbix(method: "host.get" | "item.get" | "history.get", params: unknown) {
+  const c = cfg();
+  if (!c) throw new Error("Zabbix não configurado na VM");
+  return call(c, method, params);
+}
+
 export async function getStatus(names: string[], links: Link[] = []): Promise<ZabbixStatus> {
   const c = cfg();
   if (!c) return { enabled: false, byName: {} };
