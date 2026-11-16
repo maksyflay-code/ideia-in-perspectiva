@@ -9,7 +9,6 @@ import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
 import Brand from "@/components/Brand";
 import AlarmTriage from "@/components/AlarmTriage";
-import TrafficSettings from "@/components/TrafficSettings";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
@@ -70,7 +69,7 @@ function LoginForm() {
 }
 
 type Tab = "pops" | "links" | "channels";
-type PanelTab = Tab | "traffic";
+type PanelTab = Tab;
 
 function Panel({ user }: { user: string }) {
   const qc = useQueryClient();
@@ -105,7 +104,6 @@ function Panel({ user }: { user: string }) {
           ["pops", `POPs (${net.pops.length})`],
           ["links", `Ligações (${net.links.length})`],
           ["channels", `Canais (${net.channels.length})`],
-          ["traffic", "Tráfego"],
         ] as [PanelTab, string][]).map(([k, label]) => (
           <button
             key={k}
@@ -119,7 +117,6 @@ function Panel({ user }: { user: string }) {
       {tab === "pops" && <PopsTab net={net} onChange={refresh} />}
       {tab === "links" && <LinksTab net={net} onChange={refresh} />}
       {tab === "channels" && <ChannelsTab net={net} onChange={refresh} />}
-      {tab === "traffic" && <TrafficSettings />}
     </div>
   );
 }
