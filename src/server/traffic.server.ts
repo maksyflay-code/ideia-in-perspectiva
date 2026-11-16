@@ -58,7 +58,7 @@ export async function readTraffic(db: Db): Promise<TrafficData> {
   if (pending?.key === key) return pending.promise;
   const load = async (): Promise<TrafficData> => {
     const now = Math.floor(Date.now() / 1000);
-    const empty = (error?: string): TrafficData => ({ enabled: selections.length > 0, at: now, error, external: trafficGroup([], selections, "external", now), clients: trafficGroup([], selections, "clients", now) });
+    const empty = (error?: string): TrafficData => ({ enabled: selections.length > 0, at: now, ...(error ? { error } : {}), external: trafficGroup([], selections, "external", now), clients: trafficGroup([], selections, "clients", now) });
     if (!selections.length) return empty();
     try {
       const known = await discoverTraffic();

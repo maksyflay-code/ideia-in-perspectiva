@@ -6,7 +6,7 @@ import { trafficQuery } from "@/lib/traffic.queries";
 import type { TrafficData } from "@/lib/traffic";
 import { Button } from "@/components/ui/button";
 
-export function TrafficReadout({ data }: { data?: TrafficData }) {
+export function TrafficReadout({ data }: { data?: TrafficData | undefined }) {
   const [group, setGroup] = useState<"external" | "clients">("external");
   const value = data?.[group];
   const format = (n: number | null | undefined) => n == null ? "—" : n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -22,7 +22,7 @@ export function TrafficReadout({ data }: { data?: TrafficData }) {
       <div><dt className="flex items-center gap-1 text-xs text-online"><ArrowUp className="h-3 w-3" />Upload</dt><dd className="mt-1 font-mono text-xl tabular-nums text-online">{format(value?.upload)}</dd></div>
     </dl>
     <div className="h-36 min-w-0" aria-label="Gráfico de tráfego da última hora">
-      {hasHistory ? <ResponsiveContainer width="100%" height="100%"><LineChart data={value?.series} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+      {hasHistory ? <ResponsiveContainer width="100%" height="100%"><LineChart data={value?.series ?? []} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
         <XAxis dataKey="clock" minTickGap={32} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} tickFormatter={n => new Date(Number(n) * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} />
         <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} width={42} />
         <Tooltip labelFormatter={n => new Date(Number(n) * 1000).toLocaleTimeString("pt-BR")} formatter={(n: number) => `${format(n)} Gbps`} contentStyle={{ background: "var(--card)", borderColor: "var(--border)", color: "var(--foreground)" }} />
