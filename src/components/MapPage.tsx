@@ -7,7 +7,6 @@ import { networkQuery, zabbixQuery } from "@/lib/network.queries";
 import { pathDistance } from "@/lib/network.types";
 import { filterNetwork } from "@/lib/map-layout";
 import Brand from "@/components/Brand";
-import AlarmTriage from "@/components/AlarmTriage";
 import { Button } from "@/components/ui/button";
 
 const NetworkMap = lazy(() => import("@/components/NetworkMap"));
@@ -68,7 +67,6 @@ export default function MapPage({ kind }: { kind: "sw" | "dwdm" }) {
           </div>
         )}
         <div className="flex-1 overflow-auto p-3">
-          <AlarmTriage network={net} />
           {kind === "dwdm" && <div aria-label="Estado das ligações" className="mb-3 flex flex-wrap gap-3 border-b pb-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><span className="h-1 w-5 bg-destructive" /> Falha confirmada</span>
             <span className="flex items-center gap-1"><span className="h-1 w-5 bg-standby" /> Alarme nas duas pontas</span>

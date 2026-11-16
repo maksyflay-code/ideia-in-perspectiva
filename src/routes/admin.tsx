@@ -8,6 +8,7 @@ import { missingHops, type Channel, type Link as FiberLink, type Network, type P
 import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
 import Brand from "@/components/Brand";
+import AlarmTriage from "@/components/AlarmTriage";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
@@ -96,6 +97,7 @@ function Panel({ user }: { user: string }) {
           </button>
         </div>
       </header>
+      <AlarmTriage network={net} />
       <nav className="mb-6 flex gap-1 border-b">
         {([
           ["pops", `POPs (${net.pops.length})`],
