@@ -1,4 +1,5 @@
 # Tarefas
+- [x] Preparar ação admin para os sete agregados Internet/IX confirmados, validar host/item/porta ao vivo e preservar Clientes.
 - [x] Acrescentar gráfico e medidores de download/upload no mapa SW, com grupos internet/IX e clientes confirmados no Admin; totais separados e seleção explícita para excluir transporte e duplicação de LAG.
 - [ ] Confirmar portas e conferir tráfego real na VM; Zabbix só acessível na rede do usuário, seleção ainda não confirmada e login da prévia não concluiu.
 - [x] Mover o consultor de alarme dos mapas para o painel Admin e permitir senha administrativa pelo .env da VM.
