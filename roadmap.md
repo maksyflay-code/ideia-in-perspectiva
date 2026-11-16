@@ -1,4 +1,5 @@
 # Tarefas
+- [ ] Acrescentar gráfico e medidores de download/upload no mapa SW, com grupos internet/IX e clientes confirmados no Admin, sem duplicar transporte ou LAG.
 - [x] Mover o consultor de alarme dos mapas para o painel Admin e permitir senha administrativa pelo .env da VM.
 - [x] Acrescentar suspeita amarela nos trechos Padtec sem monitoramento quando ambas as pontas estão críticas, preservando todos os estados monitorados; 52 testes passaram e compilação sem erros.
 - [x] Consultor local "Alarme → trecho provável": texto do alarme e equipamentos escolhidos apontam o trecho cadastrado mais provável, com confiança e aviso de trechos sem monitoramento, sem chamada externa; 127 testes passaram e o painel foi conferido nos dois mapas.
