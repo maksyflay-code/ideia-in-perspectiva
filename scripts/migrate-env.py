@@ -12,24 +12,34 @@ KEYS = ["ADMIN_USER", "ADMIN_PASSWORD", "SESSION_SECRET",
 if not os.path.exists(COMPOSE):
     sys.exit("docker-compose.yml não encontrado - rode dentro de /opt/mapa-dwdm")
 
+
+def clean(value):
+    """Tira comentário de fim de linha (só quando # vem depois de espaço),
+    espaços sobrando e aspas de envoltura."""
+    value = re.sub(r"\s+#.*$", "", value)
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return value
+
+
 # valores literais do compose atual (ignora linhas que usam ${VAR})
-# "#M" só é comentário quando vem depois de espaço - senão a senha é cortada
 found = {}
 for line in open(COMPOSE, encoding="utf-8"):
-    m = re.match(r"^\s*([A-Z0-9_]+):\s*(.+?)\s*(?:\s+.*)?$", line)
+    m = re.match(r"^\s*([A-Z0-9_]+):\s*(.+)$", line)
     if not m:
         continue
-    k, v = m.group(1), m.group(2).strip().strip('"').strip("'")
+    k, v = m.group(1), clean(m.group(2))
     if k in KEYS and "${" not in v and v:
         found[k] = v
 
 # .env existente: preserva tudo, adiciona só o que falta
-existing = {}
+existing = set()
 if os.path.exists(ENV):
     for line in open(ENV, encoding="utf-8"):
-        m = re.match(r"^([A-Z0-9_]+)=(.*)$", line.strip())
+        m = re.match(r"^([A-Z0-9_]+)\s*=", line.strip())
         if m:
-            existing[m.group(1)] = m.group(2)
+            existing.add(m.group(1))
 
 added = [k for k in KEYS if k in found and k not in existing]
 if added:
@@ -37,7 +47,8 @@ if added:
         if os.path.exists(ENV) and os.path.getsize(ENV) > 0:
             f.write("\n")
         for k in added:
-            f.write(f"{k}={found[k]}\n")
+            v = found[k].replace('"', '\\"')
+            f.write(f'{k}="{v}"\n')
     print("gravado no .env:", ", ".join(added))
 else:
     print(".env já estava completo - nada a gravar")
