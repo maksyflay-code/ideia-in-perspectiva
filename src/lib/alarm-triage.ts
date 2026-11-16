@@ -192,7 +192,12 @@ export function triageAlarm({
         notes.push(`Não há caminho cadastrado entre ${nameOf(a)} e ${nameOf(b)}.`);
         continue;
       }
-      const route = [nameOf(a), ...path.map((l) => nameOf(l.from_pop === a || l.to_pop === a ? l.to_pop : l.from_pop))];
+      const route = [nameOf(a)];
+      let cursor = a;
+      for (const hop of path) {
+        cursor = hop.from_pop === cursor ? hop.to_pop : hop.from_pop;
+        route.push(nameOf(cursor));
+      }
       for (const hop of path)
         add(hop, "media", `Caminho cadastrado entre ${nameOf(a)} e ${nameOf(b)}: ${route.join(" → ")}.`);
     }
