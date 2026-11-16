@@ -9,6 +9,7 @@ import LinkMonitorFields from "@/components/LinkMonitorFields";
 import DwdmImport from "@/components/DwdmImport";
 import Brand from "@/components/Brand";
 import AlarmTriage from "@/components/AlarmTriage";
+import TrafficSettings from "@/components/TrafficSettings";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
@@ -69,11 +70,12 @@ function LoginForm() {
 }
 
 type Tab = "pops" | "links" | "channels";
+type PanelTab = Tab | "traffic";
 
 function Panel({ user }: { user: string }) {
   const qc = useQueryClient();
   const { data: net } = useSuspenseQuery(networkQuery);
-  const [tab, setTab] = useState<Tab>("pops");
+  const [tab, setTab] = useState<PanelTab>("pops");
   const refresh = () => qc.invalidateQueries({ queryKey: ["network"] });
 
   return (
@@ -98,12 +100,13 @@ function Panel({ user }: { user: string }) {
         </div>
       </header>
       <AlarmTriage network={net} />
-      <nav className="mb-6 flex gap-1 border-b">
+      <nav className="mb-6 flex flex-wrap gap-1 border-b">
         {([
           ["pops", `POPs (${net.pops.length})`],
           ["links", `Ligações (${net.links.length})`],
           ["channels", `Canais (${net.channels.length})`],
-        ] as [Tab, string][]).map(([k, label]) => (
+          ["traffic", "Tráfego"],
+        ] as [PanelTab, string][]).map(([k, label]) => (
           <button
             key={k}
             onClick={() => setTab(k)}
@@ -116,6 +119,7 @@ function Panel({ user }: { user: string }) {
       {tab === "pops" && <PopsTab net={net} onChange={refresh} />}
       {tab === "links" && <LinksTab net={net} onChange={refresh} />}
       {tab === "channels" && <ChannelsTab net={net} onChange={refresh} />}
+      {tab === "traffic" && <TrafficSettings />}
     </div>
   );
 }
