@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ClipboardSearch, X } from "lucide-react";
+import { Radar, X } from "lucide-react";
 import { filterPops, triageAlarm } from "@/lib/alarm-triage";
 import type { Confidence } from "@/lib/alarm-triage";
 import type { Network } from "@/lib/network.types";
@@ -31,7 +31,7 @@ export default function AlarmTriage({ network }: { network: Network }) {
         className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-sm hover:bg-muted"
       >
         <span className="flex items-center gap-2">
-          <ClipboardSearch className="h-4 w-4 text-brand-light" />
+          <Radar className="h-4 w-4 text-brand-light" />
           Alarme → trecho provável
         </span>
         <span className="text-xs text-muted-foreground">{open ? "ocultar" : "abrir"}</span>
