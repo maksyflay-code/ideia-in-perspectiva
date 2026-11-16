@@ -81,6 +81,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         labelOffset: [0, 2],
         label: members.length > 1 ? `${mapLabel(p.name).split("\n").pop()} (${members.length})` : mapLabel(p.name),
         count: members.length,
+        ping: !!z?.enabled && !z.error && members.some((x) => z.byName[x.name]?.pingDown),
         ids: JSON.stringify(members.map((x) => x.id)),
       },
       geometry: { type: "Point" as const, coordinates: positions.get(p.id) ?? [p.lng, p.lat] },
@@ -160,12 +161,18 @@ export default function NetworkMap({
         lastStep = step;
         updateBolts(time);
       }
+      if (m.getLayer("ping-alert")) {
+        const t = (time % 1200) / 1200;
+        m.setPaintProperty("ping-alert", "circle-radius", 9 + t * 16);
+        m.setPaintProperty("ping-alert", "circle-opacity", 0.6 * (1 - t));
+      }
       frame = requestAnimationFrame(animate);
     };
     const updateMotion = () => {
       cancelAnimationFrame(frame);
       if (motion.matches) {
         if (m.getLayer("link-flow")) m.setPaintProperty("link-flow", "line-dasharray", [1, 3]);
+        if (m.getLayer("ping-alert")) { m.setPaintProperty("ping-alert", "circle-radius", 14); m.setPaintProperty("ping-alert", "circle-opacity", 0.5); }
         (m.getSource("dwdm-bolts") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
       } else frame = requestAnimationFrame(animate);
     };
@@ -206,6 +213,7 @@ export default function NetworkMap({
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["==", ["get", "state"], "suspect"], paint: { "line-color": standby, "line-width": 4 } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
+      m.addLayer({ id: "ping-alert", type: "circle", source: "pops", filter: ["==", ["get", "ping"], true], paint: { "circle-radius": 14, "circle-color": down, "circle-opacity": 0.5 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
         id: "pop-labels",

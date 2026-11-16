@@ -2,10 +2,12 @@
 import type { Link } from "@/lib/network.types";
 import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
 import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
+import { pingLost, type PingItem } from "@/lib/ping-status";
 import type { DiscoveryItem, DwdmKind } from "@/lib/dwdm-discovery";
 export type PopStatus = {
   state: "ok" | "warn" | "down" | "unknown";
   problems: { name: string; severity: number }[];
+  pingDown?: boolean;
 };
 export type ZabbixStatus = { enabled: boolean; error?: string; byName: Record<string, PopStatus>; byLink?: Record<string, LinkStatus> };
 
@@ -81,6 +83,17 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
         }
       }
       for (const s of Object.values(byName)) s.problems.sort((a, b) => b.severity - a.severity);
+      try {
+        const pings = (await call(c, "item.get", {
+          output: ["key_", "lastvalue", "lastclock", "status", "state", "hostid"],
+          hostids: hosts.map((h) => h.hostid),
+          filter: { key_: "icmpping" },
+        })) as (PingItem & { hostid: string })[];
+        for (const i of pings) {
+          const n = hostName.get(i.hostid);
+          if (n && byName[n] && pingLost(i)) byName[n].pingDown = true;
+        }
+      } catch { /* ping is optional; never hide trigger status */ }
     }
     if (names.some((n) => n.startsWith(PADTEC_PREFIX))) {
       const padtec = await padtecTriggers(c, true);
