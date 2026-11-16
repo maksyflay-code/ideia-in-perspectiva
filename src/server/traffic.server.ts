@@ -1,6 +1,7 @@
 import { queryZabbix } from "./zabbix.server";
 import { trafficGroup, trafficPorts, type TrafficItem, type TrafficPort, type TrafficSelection, type TrafficData, type HistoryValue } from "@/lib/traffic";
 import type { Db } from "./db.server";
+import { planConfirmedInternet } from "@/lib/confirmed-internet";
 
 let discovery: { at: number; ports: TrafficPort[] } | undefined;
 let discoveryPending: Promise<TrafficPort[]> | undefined;
@@ -49,6 +50,14 @@ export async function saveTraffic(db: Db, selections: TrafficSelection[]) {
   } catch (e) { db.exec("ROLLBACK"); throw e; }
   cached = undefined;
   return { ok: true };
+}
+
+export async function applyConfirmedInternet(db: Db) {
+  discovery = undefined;
+  const ports = await discoverTraffic();
+  const selections = planConfirmedInternet(ports, selectedTraffic(db));
+  await saveTraffic(db, selections);
+  return { count: selections.filter(s => s.group === "external").length };
 }
 
 export async function readTraffic(db: Db): Promise<TrafficData> {

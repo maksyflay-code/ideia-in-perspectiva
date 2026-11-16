@@ -1,6 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+export const applyConfirmedInternet = createServerFn({ method: "POST" }).handler(async () => {
+  const auth = await import("@/server/auth.server");
+  await auth.requireAdmin();
+  const { getDb } = await import("@/server/db.server");
+  const service = await import("@/server/traffic.server");
+  return service.applyConfirmedInternet(await getDb());
+});
+
 export const getTraffic = createServerFn({ method: "GET" }).handler(async () => {
   const auth = await import("@/server/auth.server");
   await auth.requireViewer();

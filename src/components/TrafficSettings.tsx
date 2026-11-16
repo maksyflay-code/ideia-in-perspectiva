@@ -3,13 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Save, RotateCw } from "lucide-react";
 import { trafficSettingsQuery } from "@/lib/traffic.queries";
-import { saveTrafficSettings } from "@/lib/traffic.functions";
+import { saveTrafficSettings, applyConfirmedInternet } from "@/lib/traffic.functions";
 import type { TrafficSelection } from "@/lib/traffic";
 import { Button } from "@/components/ui/button";
 
 export default function TrafficSettings() {
   const { data, isPending, refetch } = useQuery(trafficSettingsQuery);
   const save = useServerFn(saveTrafficSettings);
+  const applyInternet = useServerFn(applyConfirmedInternet);
   const qc = useQueryClient();
   const [draft, setDraft] = useState<TrafficSelection[] | null>(null);
   const [search, setSearch] = useState("");
@@ -31,6 +32,17 @@ export default function TrafficSettings() {
   return <section className="space-y-4">
     <div className="flex items-center justify-between"><h2 className="text-sm font-semibold">Portas dos medidores de tráfego</h2><Button variant="outline" size="icon" title="Recarregar portas" aria-label="Recarregar portas" onClick={() => refetch()}><RotateCw className="h-4 w-4" /></Button></div>
     <p className="text-sm text-muted-foreground">Internet / IX: conexões externas. Clientes: entrega aos clientes. Exclua transporte entre switches e escolha o LAG ou suas portas físicas, nunca ambos.</p>
+    <Button variant="outline" className="h-auto whitespace-normal" disabled={busy || isPending} onClick={async () => {
+      if (!window.confirm("Aplicar somente os 7 agregados Internet/IX confirmados? A seleção Internet/IX atual será substituída; Clientes será preservado.")) return;
+      setBusy(true); setMessage("");
+      try {
+        const result = await applyInternet();
+        await qc.invalidateQueries({ queryKey: ["traffic-settings"] });
+        await qc.invalidateQueries({ queryKey: ["traffic"] });
+        setDraft(null); setConfirmed(false); setMessage(`${result.count} agregados Internet/IX aplicados. Clientes preservados.`);
+      } catch (e) { setMessage(e instanceof Error ? e.message : "Não foi possível aplicar Internet/IX."); }
+      finally { setBusy(false); }
+    }}><Save className="mr-2 h-4 w-4" />Aplicar 7 portas Internet/IX confirmadas</Button>
     <input aria-label="Buscar porta de tráfego" placeholder="Buscar switch ou porta" className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={search} onChange={e => setSearch(e.target.value)} />
     {isPending && <p>Consultando portas…</p>}{data?.error && <p role="status" className="text-destructive">{data.error}</p>}
     <div className="max-h-[480px] overflow-auto border">
