@@ -152,6 +152,22 @@ export default function NetworkMap({
         });
       });
       source.setData({ type: "FeatureCollection", features });
+      const pulses = m.getSource("sw-pulses") as maplibregl.GeoJSONSource | undefined;
+      pulses?.setData({ type: "FeatureCollection", features: data.links.features.filter((f) => !f.properties.dwdm && f.properties.flowing && f.properties.state === "up").flatMap((f) => {
+        const start = f.geometry.coordinates[0];
+        const end = f.geometry.coordinates[1];
+        if (!start || !end) return [];
+        const a = m.project(start as [number, number]);
+        const b = m.project(end as [number, number]);
+        const count = Math.max(1, Math.min(6, Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 140)));
+        return Array.from({ length: count * 2 }, (_, k) => {
+          const i = k >> 1; const back = k % 2 === 1;
+          let t = ((time / 2400) + i / count + (back ? 0.5 / count : 0)) % 1;
+          if (back) t = 1 - t;
+          const p = m.unproject([a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t]);
+          return { type: "Feature" as const, properties: {}, geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] } };
+        });
+      }) });
     };
     const animate = (time: number) => {
       const step = Math.floor(time / 100) % 20;
@@ -174,6 +190,7 @@ export default function NetworkMap({
         if (m.getLayer("link-flow")) m.setPaintProperty("link-flow", "line-dasharray", [1, 3]);
         if (m.getLayer("ping-alert")) { m.setPaintProperty("ping-alert", "circle-radius", 14); m.setPaintProperty("ping-alert", "circle-opacity", 0.5); }
         (m.getSource("dwdm-bolts") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
+        (m.getSource("sw-pulses") as maplibregl.GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] });
       } else frame = requestAnimationFrame(animate);
     };
     motion.addEventListener("change", updateMotion);
@@ -204,12 +221,15 @@ export default function NetworkMap({
       m.addSource("secondary", { type: "geojson", data: d.secondary });
       m.addSource("primary", { type: "geojson", data: d.primary });
       m.addSource("pops", { type: "geojson", data: d.pops });
+      m.addSource("sw-pulses", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       m.addSource("dwdm-bolts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 4, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
-      m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 5 } });
+      m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 4 } });
       m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["==", ["get", "flowing"], true], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
+      m.addLayer({ id: "sw-pulse-glow", type: "circle", source: "sw-pulses", paint: { "circle-color": online, "circle-radius": 7, "circle-blur": 1, "circle-opacity": 0.7 } });
+      m.addLayer({ id: "sw-pulse-core", type: "circle", source: "sw-pulses", paint: { "circle-color": online, "circle-radius": 2.5, "circle-stroke-color": online, "circle-stroke-width": 1, "circle-opacity": 1 } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["==", ["get", "state"], "suspect"], paint: { "line-color": standby, "line-width": 4 } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
