@@ -171,6 +171,15 @@ describe("Equipamentos sobrepostos", () => {
     view.rerender(<NetworkMap network={monitored} channelId={null} zabbix={{ enabled: true, byName, error: "offline", byLink: { "8": { state: "up", message: "" } } }} />);
     expect(mock.sources["links"].data.features[0].properties.flowing).toBe(false);
   });
+  it("linha de switch ativa tem só a animação de pacotes, sem tracejado", () => {
+    const net: Network = { ...network, pops: [network.pops[0]!, { id: 5, name: "sw-serrinha", city: "Serrinha", lat: -11.7, lng: -39, notes: "" }], links: [{ id: 8, from_pop: 1, to_pop: 5, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "88" }] };
+    const request = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
+    render(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: {}, byLink: { "8": { state: "up", message: "" } } }} />);
+    act(() => mock.handlers["load"]?.());
+    expect(mock.layers["link-flow"].filter[2]).toEqual(["==", ["get", "dwdm"], true]);
+    act(() => request.mock.calls.at(-1)?.[0]?.(200));
+    expect(mock.sources["sw-pulses"].data.features.length).toBeGreaterThan(0);
+  });
   it("avança a animação e cancela ao sair", () => {
     const request = vi.spyOn(window, "requestAnimationFrame").mockReturnValue(42);
     const cancel = vi.spyOn(window, "cancelAnimationFrame");

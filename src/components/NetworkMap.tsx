@@ -153,7 +153,7 @@ export default function NetworkMap({
       });
       source.setData({ type: "FeatureCollection", features });
       const pulses = m.getSource("sw-pulses") as maplibregl.GeoJSONSource | undefined;
-      pulses?.setData({ type: "FeatureCollection", features: data.links.features.filter((f) => !f.properties.dwdm && f.properties.flowing && f.properties.state === "up").flatMap((f) => {
+      pulses?.setData({ type: "FeatureCollection", features: data.links.features.filter((f) => !f.properties.dwdm && f.properties.flowing).flatMap((f) => {
         const start = f.geometry.coordinates[0];
         const end = f.geometry.coordinates[1];
         if (!start || !end) return [];
@@ -167,7 +167,7 @@ export default function NetworkMap({
             let t = Math.max(0, head - j * 0.012);
             if (back) t = 1 - t;
             const p = m.unproject([a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t]);
-            return { type: "Feature" as const, properties: { tail: j }, geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] } };
+            return { type: "Feature" as const, properties: { tail: j, up: f.properties.state === "up" }, geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] } };
           });
         }).flat();
       }) });
@@ -229,10 +229,10 @@ export default function NetworkMap({
       m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 4, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 4 } });
-      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["all", ["==", ["get", "flowing"], true], ["!", ["all", ["!=", ["get", "dwdm"], true], ["==", ["get", "state"], "up"]]]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["all", ["==", ["get", "flowing"], true], ["==", ["get", "dwdm"], true]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
       m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
-      m.addLayer({ id: "sw-pulse-glow", type: "circle", source: "sw-pulses", filter: ["==", ["get", "tail"], 0], paint: { "circle-color": online, "circle-radius": 8, "circle-blur": 1, "circle-opacity": 0.75 } });
-      m.addLayer({ id: "sw-pulse-core", type: "circle", source: "sw-pulses", paint: { "circle-color": online, "circle-radius": ["-", 3, ["*", 0.5, ["get", "tail"]]], "circle-stroke-color": online, "circle-stroke-width": ["case", ["==", ["get", "tail"], 0], 1, 0], "circle-opacity": ["-", 1, ["*", 0.18, ["get", "tail"]]] } });
+      m.addLayer({ id: "sw-pulse-glow", type: "circle", source: "sw-pulses", filter: ["==", ["get", "tail"], 0], paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": 8, "circle-blur": 1, "circle-opacity": 0.75 } });
+      m.addLayer({ id: "sw-pulse-core", type: "circle", source: "sw-pulses", paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": ["-", 3, ["*", 0.5, ["get", "tail"]]], "circle-stroke-color": ["case", ["get", "up"], online, signal], "circle-stroke-width": ["case", ["==", ["get", "tail"], 0], 1, 0], "circle-opacity": ["-", 1, ["*", 0.18, ["get", "tail"]]] } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
       m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["==", ["get", "state"], "suspect"], paint: { "line-color": standby, "line-width": 4 } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
