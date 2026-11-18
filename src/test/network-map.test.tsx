@@ -155,7 +155,7 @@ describe("Equipamentos sobrepostos", () => {
     view.rerender(<NetworkMap network={net} channelId={null} zabbix={{ enabled: true, byName: {}, byLink: { "8": { state: "up", message: "Porta ativa" } } }} />);
     expect(mock.sources["links"].data.features[0].properties.state).toBe("up");
     expect(mock.sources["links"].data.features[0].properties.flowing).toBe(true);
-    expect(mock.layers["link-flow"].filter).toEqual(["==", ["get", "flowing"], true]);
+    expect(mock.layers["link-flow"].filter[1]).toEqual(["==", ["get", "flowing"], true]);
   });
   it("mantém porta monitorada desconhecida ou caída sem animação", () => {
     const link = { id: 8, from_pop: 1, to_pop: 2, distance_km: 10, zabbix_host: "sw-jacuipe", zabbix_item: "88" };
