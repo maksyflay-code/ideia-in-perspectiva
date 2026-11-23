@@ -9,12 +9,14 @@ export function equipmentType(name: string) {
   if (/^padtec-/i.test(name)) return "padtec";
   if (/^eci-/i.test(name)) return "eci";
   if (/^parks-/i.test(name)) return "parks";
+  if (/^dci-datacom-/i.test(name)) return "datacom";
   return "sw";
 }
 
 /** Marker label: switches show only the site name, DWDM keeps the brand on its own line. */
 export function mapLabel(name: string) {
   if (equipmentType(name) === "sw") return name.replace(/^sw-/i, "");
+  if (equipmentType(name) === "datacom") return name.replace(/^dci-datacom-/i, "datacom\n");
   return name.replace(/^(padtec|eci|parks)-/i, "$1\n");
 }
 

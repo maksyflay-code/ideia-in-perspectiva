@@ -61,6 +61,19 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
     const key = String(positions.get(p.id) ?? [p.lng, p.lat]);
     groups.set(key, [...(groups.get(key) ?? []), p]);
   }
+  // Alternate labels above/below for side-by-side equipment so names never overlap.
+  const sideIndex = new Map<number, number>();
+  {
+    const rows = new Map<string, typeof net.pops>();
+    for (const p of net.pops) {
+      const k = `${p.lat.toFixed(2)}|${p.lng.toFixed(2)}`;
+      rows.set(k, [...(rows.get(k) ?? []), p]);
+    }
+    for (const row of rows.values()) {
+      row.sort((a, b) => (positions.get(a.id)?.[0] ?? a.lng) - (positions.get(b.id)?.[0] ?? b.lng));
+      if (row.length > 1) row.forEach((p, i) => sideIndex.set(p.id, i));
+    }
+  }
   const pops = {
     type: "FeatureCollection" as const,
     features: [...groups.values()].map((members) => {
@@ -77,8 +90,8 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         city: p.city,
         state,
         dwdm: members.every((x) => equipmentType(x.name) !== "sw"),
-        labelAnchor: "top",
-        labelOffset: [0, 2],
+        labelAnchor: (sideIndex.get(p.id) ?? 0) % 2 ? "bottom" : "top",
+        labelOffset: (sideIndex.get(p.id) ?? 0) % 2 ? [0, -0.9] : [0, 0.9],
         label: members.length > 1 ? `${mapLabel(p.name).split("\n").pop()} (${members.length})` : mapLabel(p.name),
         count: members.length,
         ping: !!z?.enabled && !z.error && members.some((x) => z.byName[x.name]?.pingDown),
