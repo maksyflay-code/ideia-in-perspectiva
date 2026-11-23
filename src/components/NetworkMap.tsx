@@ -66,7 +66,10 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
   {
     const rows = new Map<string, typeof net.pops>();
     for (const p of net.pops) {
-      const k = `${p.lat.toFixed(2)}|${p.lng.toFixed(2)}`;
+      // Spread members share the same display latitude (same screen row).
+      const at = positions.get(p.id);
+      if (!at || (at[0] === p.lng && at[1] === p.lat)) continue;
+      const k = at[1].toFixed(7);
       rows.set(k, [...(rows.get(k) ?? []), p]);
     }
     for (const row of rows.values()) {
