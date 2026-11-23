@@ -19,6 +19,19 @@ export function interfaceStatus(item: InterfaceItem | undefined, host: string, n
   return { state: "unknown", message: "Estado da porta inconclusivo" };
 }
 
+/** Group of ports on one switch (e.g. LAG members): any confirmed down port fails the link. */
+export function interfaceGroupIds(value: string) {
+  const ids = value.split(",").map((s) => s.trim()).filter(Boolean);
+  return ids.length >= 2 && ids.every((id) => /^\d+$/.test(id)) ? ids : null;
+}
+export function interfaceGroupStatus(items: (InterfaceItem | undefined)[], host: string, now = Date.now()): LinkStatus {
+  const st = items.map((i) => interfaceStatus(i, host, now));
+  const down = st.filter((x) => x.state === "down").length;
+  if (down) return { state: "down", message: `${down} de ${st.length} portas caídas` };
+  if (st.some((x) => x.state !== "up")) return { state: "unknown", message: "Alguma porta sem leitura válida" };
+  return { state: "up", message: `Todas as ${st.length} portas ativas` };
+}
+
 export function linkVisualState(link: Link, z?: {
   enabled: boolean; error?: string; byLink?: Record<string, LinkStatus>;
   byName?: Record<string, { state: string; problems: { name: string; severity: number }[] }>;

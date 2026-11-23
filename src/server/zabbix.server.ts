@@ -1,6 +1,6 @@
 // Read-only Zabbix client. Credentials come from ZABBIX_URL / ZABBIX_USER / ZABBIX_PASSWORD.
 import type { Link } from "@/lib/network.types";
-import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
+import { interfaceStatus, interfaceGroupIds, interfaceGroupStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
 import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
 import { olpItemIds, olpStatus } from "@/lib/olp-status";
 import { pingLost, type PingItem } from "@/lib/ping-status";
@@ -121,7 +121,7 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
       try {
         const items = (await call(c, "item.get", {
           output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
-          itemids: [...new Set(monitored.flatMap((l) => l.monitor_kind === "olp_power" ? olpItemIds(l.zabbix_item) ?? [] : [l.zabbix_item.trim()]))],
+          itemids: [...new Set(monitored.flatMap((l) => l.monitor_kind === "olp_power" ? olpItemIds(l.zabbix_item) ?? [] : l.monitor_kind === "interface_group" ? interfaceGroupIds(l.zabbix_item) ?? [] : [l.zabbix_item.trim()]))],
           selectHosts: ["host"],
         })) as InterfaceItem[];
         const byId = new Map(items.map((i) => [i.itemid, i]));
@@ -129,6 +129,11 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
           if (l.monitor_kind === "olp_power") {
             const ids = olpItemIds(l.zabbix_item);
             byLink[String(l.id)] = ids ? olpStatus(ids.map((id) => byId.get(id)), l.zabbix_host.trim()) : { state: "unknown", message: "Itens da proteção óptica inválidos" };
+            continue;
+          }
+          if (l.monitor_kind === "interface_group") {
+            const ids = interfaceGroupIds(l.zabbix_item);
+            byLink[String(l.id)] = ids ? interfaceGroupStatus(ids.map((id) => byId.get(id)), l.zabbix_host.trim()) : { state: "unknown", message: "Lista de portas inválida" };
             continue;
           }
           if (l.monitor_kind !== "padtec_loss") {
