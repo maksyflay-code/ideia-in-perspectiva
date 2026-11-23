@@ -34,14 +34,6 @@ function lineFeatures(path: number[], positions: Map<number, [number, number]>) 
 function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?: maplibregl.Map) {
   const positions = displayPositions(net.pops, m);
   const byId = new Map(net.pops.map((p) => [p.id, p]));
-  // Parallel links between the same two points (e.g. protected routes) get separate lanes.
-  const lanes = new Map<string, number[]>();
-  for (const l of net.links) { const k = [l.from_pop, l.to_pop].sort((a, b) => a - b).join("-"); lanes.set(k, [...(lanes.get(k) ?? []), l.id]); }
-  const laneOffset = (l: Network["links"][number]) => {
-    const ids = lanes.get([l.from_pop, l.to_pop].sort((a, b) => a - b).join("-")) ?? [];
-    const off = (ids.indexOf(l.id) - (ids.length - 1) / 2) * 7;
-    return l.from_pop <= l.to_pop ? off : -off;
-  };
   const links = {
     type: "FeatureCollection" as const,
     features: net.links
@@ -52,7 +44,7 @@ function buildData(net: Network, channelId: number | null, z?: ZabbixStatus, m?:
         const state = linkVisualState(l, z, { from, to });
         return [{
         type: "Feature" as const,
-         properties: { id: l.id, km: l.distance_km, offset: laneOffset(l), state, dwdm: isDwdmLink(from, to), flowing: state === "up" || state === "unmonitored" },
+         properties: { id: l.id, km: l.distance_km, state, dwdm: isDwdmLink(from, to), flowing: state === "up" || state === "unmonitored" },
         geometry: {
           type: "LineString" as const,
           coordinates: [
@@ -141,12 +133,6 @@ export default function NetworkMap({
     let frame = 0;
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let lastStep = -1;
-    const lane = (map: maplibregl.Map, s: number[], e: number[], off: number) => {
-      const a = map.project(s as [number, number]), b = map.project(e as [number, number]);
-      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      const nx = ((b.y - a.y) / len) * off, ny = (-(b.x - a.x) / len) * off;
-      return [{ x: a.x - nx, y: a.y - ny }, { x: b.x - nx, y: b.y - ny }] as const;
-    };
     const updateBolts = (time: number) => {
       const source = m.getSource("dwdm-bolts") as maplibregl.GeoJSONSource | undefined;
       if (!source) return;
@@ -156,7 +142,8 @@ export default function NetworkMap({
         const start = f.geometry.coordinates[0];
         const end = f.geometry.coordinates[1];
         if (!start || !end) return [];
-        const [a, b] = lane(m, start, end, f.properties.offset);
+        const a = m.project(start as [number, number]);
+        const b = m.project(end as [number, number]);
         const count = Math.max(1, Math.min(8, Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 110)));
         return Array.from({ length: count }, (_, i) => {
           const t = ((time / 1800) + i / count) % 1;
@@ -170,7 +157,8 @@ export default function NetworkMap({
         const start = f.geometry.coordinates[0];
         const end = f.geometry.coordinates[1];
         if (!start || !end) return [];
-        const [a, b] = lane(m, start, end, f.properties.offset);
+        const a = m.project(start as [number, number]);
+        const b = m.project(end as [number, number]);
         const count = Math.max(1, Math.min(6, Math.floor(Math.hypot(b.x - a.x, b.y - a.y) / 140)));
         return Array.from({ length: count * 2 }, (_, k) => {
           const i = k >> 1; const back = k % 2 === 1;
@@ -238,16 +226,16 @@ export default function NetworkMap({
       m.addSource("pops", { type: "geojson", data: d.pops });
       m.addSource("sw-pulses", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       m.addSource("dwdm-bolts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-offset": ["get", "offset"], "line-width": 4, "line-opacity": 0.8 } });
+      m.addLayer({ id: "links", type: "line", source: "links", paint: { "line-color": ["match", ["get", "state"], "up", online, "down", down, neutral], "line-width": 4, "line-opacity": 0.8 } });
       m.addLayer({ id: "secondary", type: "line", source: "secondary", paint: { "line-color": standby, "line-width": 4, "line-dasharray": [2, 2] } });
       m.addLayer({ id: "primary", type: "line", source: "primary", paint: { "line-color": signal, "line-width": 4 } });
-      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["all", ["==", ["get", "flowing"], true], ["==", ["get", "dwdm"], true]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-offset": ["get", "offset"], "line-width": 4, "line-dasharray": [1, 3] } });
-      m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-offset": ["get", "offset"], "line-width": 4, "line-opacity": 0.85 } });
+      m.addLayer({ id: "link-flow", type: "line", source: "links", filter: ["all", ["==", ["get", "flowing"], true], ["==", ["get", "dwdm"], true]], paint: { "line-color": ["match", ["get", "state"], "up", online, signal], "line-width": 4, "line-dasharray": [1, 3] } });
+      m.addLayer({ id: "dwdm-lines", type: "line", source: "links", filter: ["==", ["get", "dwdm"], true], paint: { "line-color": ["case", ["==", ["get", "state"], "unknown"], neutral, fiber], "line-width": 4, "line-opacity": 0.85 } });
       m.addLayer({ id: "sw-pulse-glow", type: "circle", source: "sw-pulses", filter: ["==", ["get", "tail"], 0], paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": 8, "circle-blur": 1, "circle-opacity": 0.75 } });
       m.addLayer({ id: "sw-pulse-core", type: "circle", source: "sw-pulses", paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": ["-", 3, ["*", 0.5, ["get", "tail"]]], "circle-stroke-color": ["case", ["get", "up"], online, signal], "circle-stroke-width": ["case", ["==", ["get", "tail"], 0], 1, 0], "circle-opacity": ["-", 1, ["*", 0.18, ["get", "tail"]]] } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
-      m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["in", ["get", "state"], ["literal", ["suspect", "degraded"]]], paint: { "line-color": standby, "line-offset": ["get", "offset"], "line-width": 4 } });
-      m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-offset": ["get", "offset"], "line-width": 4 } });
+      m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["in", ["get", "state"], ["literal", ["suspect", "degraded"]]], paint: { "line-color": standby, "line-width": 4 } });
+      m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "ping-alert", type: "circle", source: "pops", filter: ["==", ["get", "ping"], true], paint: { "circle-radius": 14, "circle-color": down, "circle-opacity": 0.5 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
       m.addLayer({
