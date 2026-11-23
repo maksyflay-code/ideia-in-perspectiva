@@ -2,6 +2,7 @@
 import type { Link } from "@/lib/network.types";
 import { interfaceStatus, type InterfaceItem, type LinkStatus } from "@/lib/link-status";
 import { opticalStatus, opticalLossKey } from "@/lib/optical-status";
+import { olpItemIds, olpStatus } from "@/lib/olp-status";
 import { pingLost, type PingItem } from "@/lib/ping-status";
 import type { DiscoveryItem, DwdmKind } from "@/lib/dwdm-discovery";
 export type PopStatus = {
@@ -120,11 +121,16 @@ export async function getStatus(names: string[], links: Link[] = []): Promise<Za
       try {
         const items = (await call(c, "item.get", {
           output: ["itemid", "key_", "lastvalue", "lastclock", "status", "state"],
-          itemids: [...new Set(monitored.map((l) => l.zabbix_item.trim()))],
+          itemids: [...new Set(monitored.flatMap((l) => l.monitor_kind === "olp_power" ? olpItemIds(l.zabbix_item) ?? [] : [l.zabbix_item.trim()]))],
           selectHosts: ["host"],
         })) as InterfaceItem[];
         const byId = new Map(items.map((i) => [i.itemid, i]));
         for (const l of monitored) {
+          if (l.monitor_kind === "olp_power") {
+            const ids = olpItemIds(l.zabbix_item);
+            byLink[String(l.id)] = ids ? olpStatus(ids.map((id) => byId.get(id)), l.zabbix_host.trim()) : { state: "unknown", message: "Itens da proteção óptica inválidos" };
+            continue;
+          }
           if (l.monitor_kind !== "padtec_loss") {
             byLink[String(l.id)] = interfaceStatus(byId.get(l.zabbix_item.trim()), l.zabbix_host.trim());
             continue;

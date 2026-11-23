@@ -1,6 +1,6 @@
 import type { Link, Pop } from "./network.types";
 
-export type LinkStatus = { state: "up" | "down" | "unknown"; message: string };
+export type LinkStatus = { state: "up" | "down" | "unknown" | "degraded"; message: string };
 export type InterfaceItem = {
   itemid: string; key_: string; lastvalue: string; lastclock: string;
   status: string; state: string; hosts: { host: string }[];
@@ -22,7 +22,7 @@ export function interfaceStatus(item: InterfaceItem | undefined, host: string, n
 export function linkVisualState(link: Link, z?: {
   enabled: boolean; error?: string; byLink?: Record<string, LinkStatus>;
   byName?: Record<string, { state: string; problems: { name: string; severity: number }[] }>;
-}, endpoints?: { from?: Pick<Pop, "name"> | undefined; to?: Pick<Pop, "name"> | undefined }): "up" | "down" | "unknown" | "unmonitored" | "suspect" {
+}, endpoints?: { from?: Pick<Pop, "name"> | undefined; to?: Pick<Pop, "name"> | undefined }): "up" | "down" | "unknown" | "degraded" | "unmonitored" | "suspect" {
   if (!link.zabbix_item.trim()) {
     const names = [endpoints?.from?.name, endpoints?.to?.name];
     const bothCritical = z?.enabled && !z.error && names.every((name) => {

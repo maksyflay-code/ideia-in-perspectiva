@@ -87,7 +87,7 @@ const linkSchema = z
     distance_km: z.number().min(0).max(100000),
     zabbix_host: z.string().max(200).default(""),
     zabbix_item: z.string().max(200).default(""),
-    monitor_kind: z.enum(["interface", "padtec_loss"]).default("interface"),
+    monitor_kind: z.enum(["interface", "padtec_loss", "olp_power"]).default("interface"),
     optical_down_value: z.enum(["", "0", "1"]).default(""),
   })
   .refine((v) => v.from_pop !== v.to_pop, { message: "Origem e destino devem ser diferentes" });
@@ -261,6 +261,12 @@ export const importParksSegments = createServerFn({ method: "POST" }).handler(as
   await (await auth()).requireAdmin();
   const service = await import("@/server/parks.server");
   return service.importParks(await db());
+});
+
+export const importFortalezaGlobenetBrdigital = createServerFn({ method: "POST" }).handler(async () => {
+  await (await auth()).requireAdmin();
+  const service = await import("@/server/fortaleza-olp.server");
+  return service.importFortalezaOlp(await db());
 });
 
 export const importOlindinaMontegordo = createServerFn({ method: "POST" }).handler(async () => {

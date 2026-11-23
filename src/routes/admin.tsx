@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { meQuery, networkQuery } from "@/lib/network.queries";
-import { PENDING_NOTE, deleteItem, importChapadaCoite, importMissingLinks, importOlindinaMontegordo, importParksSegments, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
+import { PENDING_NOTE, deleteItem, importChapadaCoite, importMissingLinks, importOlindinaMontegordo, importFortalezaGlobenetBrdigital, importParksSegments, importZabbixHosts, login, logout, saveChannel, saveLink, savePop } from "@/lib/network.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { missingHops, type Channel, type Link as FiberLink, type Network, type Pop } from "@/lib/network.types";
 import LinkMonitorFields from "@/components/LinkMonitorFields";
@@ -271,6 +271,7 @@ function ZabbixImport({ onChange }: { onChange: () => void }) {
       </div>
       <DwdmImport onChange={onChange} />
       <OlindinaMontegordoImport onChange={onChange} />
+      <FortalezaOlpImport onChange={onChange} />
       <Button type="button" variant="outline" size="sm" disabled={!!busy} className="h-auto whitespace-normal" onClick={async () => {
         setBusy("chapada-coite");
         setMsg("");
@@ -325,6 +326,24 @@ function OlindinaMontegordoImport({ onChange }: { onChange: () => void }) {
       } catch (e) { setMessage(e instanceof Error ? e.message : "Erro ao criar ligações"); }
       finally { setBusy(false); }
     }}>{busy ? "Criando…" : "Criar ligações Olindina e Monte Gordo (4 portas)"}</Button>
+    {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
+  </div>;
+}
+
+function FortalezaOlpImport({ onChange }: { onChange: () => void }) {
+  const run = useServerFn(importFortalezaGlobenetBrdigital);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  return <div className="space-y-2">
+    <Button type="button" variant="outline" size="sm" className="h-auto whitespace-normal" disabled={busy} onClick={async () => {
+      setBusy(true); setMessage("");
+      try {
+        const r = await run();
+        setMessage(`${r.popsAdded} ponto(s) criado(s) · ${r.added} ligação criada · ${r.monitored} monitoramento aplicado · ${r.preserved} já existia. Vermelho com as duas rotas sem luz, amarelo com uma.`);
+        onChange();
+      } catch (e) { setMessage(e instanceof Error ? e.message : "Erro ao criar ligação"); }
+      finally { setBusy(false); }
+    }}>{busy ? "Criando…" : "Criar Datacom Globenet × BR Digital (Fortaleza)"}</Button>
     {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
   </div>;
 }

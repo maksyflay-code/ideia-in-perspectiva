@@ -234,7 +234,7 @@ export default function NetworkMap({
       m.addLayer({ id: "sw-pulse-glow", type: "circle", source: "sw-pulses", filter: ["==", ["get", "tail"], 0], paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": 8, "circle-blur": 1, "circle-opacity": 0.75 } });
       m.addLayer({ id: "sw-pulse-core", type: "circle", source: "sw-pulses", paint: { "circle-color": ["case", ["get", "up"], online, signal], "circle-radius": ["-", 3, ["*", 0.5, ["get", "tail"]]], "circle-stroke-color": ["case", ["get", "up"], online, signal], "circle-stroke-width": ["case", ["==", ["get", "tail"], 0], 1, 0], "circle-opacity": ["-", 1, ["*", 0.18, ["get", "tail"]]] } });
       if (ctx) m.addLayer({ id: "dwdm-bolts", type: "symbol", source: "dwdm-bolts", layout: { "icon-image": "fiber-bolt", "icon-allow-overlap": true, "icon-ignore-placement": true } });
-      m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["==", ["get", "state"], "suspect"], paint: { "line-color": standby, "line-width": 4 } });
+      m.addLayer({ id: "link-suspect", type: "line", source: "links", filter: ["in", ["get", "state"], ["literal", ["suspect", "degraded"]]], paint: { "line-color": standby, "line-width": 4 } });
       m.addLayer({ id: "link-down", type: "line", source: "links", filter: ["==", ["get", "state"], "down"], paint: { "line-color": down, "line-width": 4 } });
       m.addLayer({ id: "ping-alert", type: "circle", source: "pops", filter: ["==", ["get", "ping"], true], paint: { "circle-radius": 14, "circle-color": down, "circle-opacity": 0.5 } });
       m.addLayer({ id: "pops", type: "circle", source: "pops", paint: { "circle-radius": 7, "circle-color": ["match", ["get", "state"], "ok", online, "warn", standby, "down", down, "unknown", neutral, signal], "circle-stroke-color": outline, "circle-stroke-width": 3 } });
@@ -257,7 +257,7 @@ export default function NetworkMap({
         const from = fromPop?.name ?? "?";
         const to = toPop?.name ?? "?";
         const state = linkVisualState(link, current.zabbix, { from: fromPop, to: toPop });
-        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarme de perda de sinal" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento", suspect: "Alarme nas duas pontas · falha do trecho não confirmada" };
+        const labels = { up: link.monitor_kind === "padtec_loss" ? "Line sem alarme de perda de sinal" : "Porta ativa", down: "Ligação caída", unknown: "Estado indisponível", unmonitored: "Ligação cadastrada · sem monitoramento", suspect: "Alarme nas duas pontas · falha do trecho não confirmada", degraded: "Uma rota da proteção caída · tráfego pela outra" };
         const message = current.zabbix?.byLink?.[String(id)]?.message;
         new maplibregl.Popup({ offset: 12 }).setLngLat(e.lngLat)
           .setHTML(`<strong>${escapeHtml(from)} ↔ ${escapeHtml(to)}</strong><br/>${link.distance_km} km<br/>${labels[state]}${message && message !== labels[state] ? `<br/>${escapeHtml(message)}` : ""}`).addTo(m);
