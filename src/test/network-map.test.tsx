@@ -58,30 +58,30 @@ describe("Equipamentos sobrepostos", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
   });
-  it("une switch, Padtec e ECI da mesma cidade em um ponto e lista todos no clique", () => {
+  it("mostra switch, Padtec e ECI da mesma cidade como pontos separados", () => {
     const net = { ...network, pops: [...network.pops, { ...network.pops[0], id: 3, name: "eci-jacuipe" }] } as Network;
     const saved = JSON.stringify(net);
     render(<NetworkMap network={net} channelId={null} />);
     act(() => mock.handlers["load"]?.());
     const features = mock.sources["pops"].data.features;
-    expect(features).toHaveLength(1);
-    expect(features[0].properties.count).toBe(3);
+    expect(features).toHaveLength(3);
     expect(JSON.stringify(net)).toBe(saved);
-    act(() => mock.handlers["click:pops"]?.({ features: [features[0]] }));
-    for (const name of ["sw-jacuipe", "padtec-jacuipe", "eci-jacuipe"]) expect(mock.html).toContain(name);
   });
-  it("ponto unificado mostra o pior estado do Zabbix", () => {
+  it("cada ponto mostra o estado do seu equipamento", () => {
     render(<NetworkMap network={network} channelId={null} zabbix={{ enabled: true, byName: { "sw-jacuipe": { state: "ok", problems: [] }, "padtec-jacuipe": { state: "down", problems: [] } } }} />);
     act(() => mock.handlers["load"]?.());
-    expect(mock.sources["pops"].data.features[0].properties.state).toBe("down");
+    const f = mock.sources["pops"].data.features;
+    expect(f.find((x: any) => x.properties.name === "padtec-jacuipe").properties.state).toBe("down");
+    expect(f.find((x: any) => x.properties.name === "sw-jacuipe").properties.state).toBe("ok");
   });
-  it("põe equipamentos próximos na mesma posição", () => {
+  it("separa equipamentos próximos lado a lado", () => {
     const camera = {
       project: ([lng, lat]: [number, number]) => ({ x: lng * 10000, y: lat * 10000 }),
       unproject: ([x, y]: [number, number]) => ({ lng: x / 10000, lat: y / 10000 }),
     };
     const positions = displayPositions(network.pops, camera);
-    expect(positions.get(1)).toEqual(positions.get(2));
+    const a = camera.project(positions.get(1)!), b = camera.project(positions.get(2)!);
+    expect(Math.round(Math.abs(a.x - b.x))).toBe(24); expect(a.y).toBeCloseTo(b.y);
     expect(equipmentType("padtec-paulo-afonso")).toBe("padtec");
   });
   it("liga as linhas às posições visuais e anima raios só em DWDM ativo ou não monitorado", () => {
@@ -95,7 +95,7 @@ describe("Equipamentos sobrepostos", () => {
     act(() => mock.handlers["load"]?.());
     const link = mock.sources["links"].data.features[0];
     expect(link.properties.dwdm).toBe(true);
-    expect(link.geometry.coordinates[0]).toEqual(mock.sources["pops"].data.features[0].geometry.coordinates);
+    expect(link.geometry.coordinates[0]).toEqual(mock.sources["pops"].data.features.find((x: any) => x.properties.id === 2).geometry.coordinates);
     act(() => request.mock.calls.at(-1)?.[0]?.(200));
     expect(mock.sources["dwdm-bolts"].data.features.length).toBeGreaterThan(0);
     const monitored = { ...net, links: [{ ...net.links[0], zabbix_item: "99" }] } as Network;

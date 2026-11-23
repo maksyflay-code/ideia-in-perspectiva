@@ -35,8 +35,14 @@ export function displayPositions(pops: Pop[], camera?: Camera) {
   for (const group of groups) {
     if (group.length < 2) continue;
     const points = group.map((p) => camera.project([p.lng, p.lat]));
-    const center = camera.unproject([points.reduce((n, p) => n + p.x, 0) / points.length, points.reduce((n, p) => n + p.y, 0) / points.length]);
-    for (const pop of group) positions.set(pop.id, [center.lng, center.lat]);
+    const cx = points.reduce((n, p) => n + p.x, 0) / points.length;
+    const cy = points.reduce((n, p) => n + p.y, 0) / points.length;
+    // Side by side, 24px apart, so each equipment keeps its own Zabbix color.
+    const sorted = [...group].sort((a, b) => equipmentType(a.name).localeCompare(equipmentType(b.name)) || a.name.localeCompare(b.name));
+    sorted.forEach((pop, i) => {
+      const at = camera.unproject([cx + (i - (sorted.length - 1) / 2) * 24, cy]);
+      positions.set(pop.id, [at.lng, at.lat]);
+    });
   }
   return positions;
 }
