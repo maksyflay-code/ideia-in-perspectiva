@@ -10,7 +10,7 @@ export type InterfaceItem = {
 export function interfaceStatus(item: InterfaceItem | undefined, host: string, now = Date.now()): LinkStatus {
   if (!item || !item.hosts.some((h) => h.host === host))
     return { state: "unknown", message: "Item não encontrado neste host" };
-  if (!/net\.if\.status\[|ifOperStatus/i.test(item.key_))
+  if (!/net\.if\.status\[|ifOperStatus|mgmtOsc\.operStatus/i.test(item.key_))
     return { state: "unknown", message: "Selecione um item de estado operacional da porta (ifOperStatus)" };
   if (item.status !== "0" || item.state !== "0" || Number(item.lastclock) <= 0 || now / 1000 - Number(item.lastclock) > 300)
     return { state: "unknown", message: "Porta sem leitura válida nos últimos 5 minutos" };
