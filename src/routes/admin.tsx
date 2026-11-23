@@ -339,11 +339,11 @@ function FortalezaOlpImport({ onChange }: { onChange: () => void }) {
       setBusy(true); setMessage("");
       try {
         const r = await run();
-        setMessage(`${r.popsAdded} ponto(s) criado(s) · ${r.added} ligação criada · ${r.monitored} monitoramento aplicado · ${r.preserved} já existia. Vermelho com as duas rotas sem luz, amarelo com uma.`);
+        setMessage(`${r.popsAdded} ponto(s) criado(s) · ${r.added} ligação(ões) criada(s) · ${r.monitored} atualizada(s) · ${r.preserved} já existia(m). Duas linhas: Line 1 BR Digital e Line 2 Tely; fica vermelha a rota que perder luz.`);
         onChange();
       } catch (e) { setMessage(e instanceof Error ? e.message : "Erro ao criar ligação"); }
       finally { setBusy(false); }
-    }}>{busy ? "Criando…" : "Criar Datacom Globenet × BR Digital (Fortaleza)"}</Button>
+    }}>{busy ? "Criando…" : "Criar/atualizar 2 rotas Globenet × BR Digital (Fortaleza)"}</Button>
     {message && <p role="status" className="text-xs text-muted-foreground">{message}</p>}
   </div>;
 }

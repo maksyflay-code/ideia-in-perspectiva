@@ -7,6 +7,23 @@ export function olpItemIds(value: string) {
   return ids.length === 4 && ids.every((id) => /^\d+$/.test(id)) ? ids : null;
 }
 
+export const OLP_ROUTE_KIND = "olp_route" as const;
+/** One protected route as its own link: zabbix_item holds "input,threshold" item ids. */
+export function olpRouteItemIds(value: string) {
+  const ids = value.split(",").map((s) => s.trim());
+  return ids.length === 2 && ids.every((id) => /^\d+$/.test(id)) ? ids : null;
+}
+export function olpRouteStatus(items: (InterfaceItem | undefined)[], host: string, now = Date.now()): LinkStatus {
+  const v = items.map((i) => {
+    if (!i || !i.hosts.some((h) => h.host === host) || i.status !== "0" || i.state !== "0") return null;
+    if (Number(i.lastclock) <= 0 || now / 1000 - Number(i.lastclock) > 300) return null;
+    const n = Number(i.lastvalue);
+    return Number.isFinite(n) ? n : null;
+  });
+  if (v.length !== 2 || v.some((x) => x === null)) return { state: "unknown", message: "Rota sem leitura válida nos últimos 5 minutos" };
+  return v[0]! < v[1]! ? { state: "down", message: "Rota sem luz (abaixo do limite)" } : { state: "up", message: "Rota com luz" };
+}
+
 /** Red only when both protected routes lose light; one route lost is a degraded (yellow) link. */
 export function olpStatus(items: (InterfaceItem | undefined)[], host: string, now = Date.now()): LinkStatus {
   const values = items.map((i) => {

@@ -87,7 +87,7 @@ const linkSchema = z
     distance_km: z.number().min(0).max(100000),
     zabbix_host: z.string().max(200).default(""),
     zabbix_item: z.string().max(200).default(""),
-    monitor_kind: z.enum(["interface", "padtec_loss", "olp_power"]).default("interface"),
+    monitor_kind: z.enum(["interface", "padtec_loss", "olp_power", "olp_route"]).default("interface"),
     optical_down_value: z.enum(["", "0", "1"]).default(""),
   })
   .refine((v) => v.from_pop !== v.to_pop, { message: "Origem e destino devem ser diferentes" });
