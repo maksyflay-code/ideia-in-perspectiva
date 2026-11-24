@@ -27,10 +27,13 @@ export function displayPositions(pops: Pop[], camera?: Camera) {
   const groups: Pop[][] = [];
   for (const pop of pops) {
     const point = camera.project([pop.lng, pop.lat]);
-    const group = groups.find((members) => members.some((member) => {
-      const other = camera.project([member.lng, member.lat]);
+    // Only colocated equipment (same site, ~3 km) is spread; compare with the group's first
+    // member so zoomed-out maps never chain whole regions into one long row.
+    const group = groups.find(([first]) => {
+      if (!first || Math.hypot(pop.lng - first.lng, pop.lat - first.lat) > 0.03) return false;
+      const other = camera.project([first.lng, first.lat]);
       return Math.hypot(point.x - other.x, point.y - other.y) <= 22;
-    }));
+    });
     if (group) group.push(pop);
     else groups.push([pop]);
   }
