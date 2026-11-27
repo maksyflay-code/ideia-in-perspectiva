@@ -51,4 +51,5 @@ use the editor.
 - Padtec ring segments come from a browser-safe fixed planner of admin-supplied OSC dashboard segments; import is admin-only, all-or-nothing when a site is missing/ambiguous, deduplicates undirected pairs, and creates links unmonitored.
 - Single-switch imports are explicit admin actions in dynamically loaded SQLite services; preserve existing POPs and leave unknown/operator endpoints in notes instead of inventing links, because a port label alone does not identify a map endpoint.
 - Alarm-to-segment advice is a browser-safe pure lookup over registered POPs/links, never an external AI call.
+- Padtec spans without Line Loss may use monitor_kind padtec_spvl (comma list of SPVL SFP-down item IDs, 0 ok/1 alarm, 300s fresh); SFP↔neighbor mapping is deduced from matching Pout/Pin span loss.
 - Parks Cícero–Lagarto–Aracaju was replaced by Padtec; no Admin Parks import (would recreate retired gear).

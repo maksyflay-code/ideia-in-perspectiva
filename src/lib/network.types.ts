@@ -6,7 +6,7 @@ export type Link = {
   distance_km: number;
   zabbix_host: string;
   zabbix_item: string;
-  monitor_kind?: "interface" | "padtec_loss" | "olp_power" | "interface_group";
+  monitor_kind?: "interface" | "padtec_loss" | "olp_power" | "interface_group" | "padtec_spvl";
   optical_down_value?: string;
 };
 export type Channel = {

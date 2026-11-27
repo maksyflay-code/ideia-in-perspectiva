@@ -48,3 +48,16 @@ export function linkVisualState(link: Link, z?: {
   if (!z?.enabled || z.error) return "unknown";
   return z.byLink?.[String(link.id)]?.state ?? "unknown";
 }
+/** Padtec SPVL (supervisory/OSC) "SFP down alarm": 0 = no alarm, 1 = alarm. Any fresh alarm fails the span. */
+export const spvlSfpDownKey = /^cardPart\d+_.*sfp.*down.*\[\d+\]$/i;
+export function spvlStatus(items: (InterfaceItem | undefined)[], now = Date.now()): LinkStatus {
+  if (!items.length) return { state: "unknown", message: "Nenhum alarme de supervisão cadastrado" };
+  let unknown = false;
+  for (const i of items) {
+    if (!i || !i.hosts.some((h) => h.host === "Padtec - Servidor") || !spvlSfpDownKey.test(i.key_)) { unknown = true; continue; }
+    if (i.status !== "0" || i.state !== "0" || Number(i.lastclock) <= 0 || now / 1000 - Number(i.lastclock) > 300) { unknown = true; continue; }
+    if (i.lastvalue === "1") return { state: "down", message: "Canal de supervisão Padtec caído (provável fibra rompida)" };
+    if (i.lastvalue !== "0") unknown = true;
+  }
+  return unknown ? { state: "unknown", message: "Supervisão Padtec sem leitura válida" } : { state: "up", message: "Canal de supervisão Padtec ativo" };
+}

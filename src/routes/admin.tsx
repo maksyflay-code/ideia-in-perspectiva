@@ -370,7 +370,7 @@ function LinksTab({ net, onChange }: { net: Network; onChange: () => void }) {
           distance_km: Number(String(f.get("km")).replace(",", ".")),
           zabbix_host: String(f.get("zh") ?? ""),
           zabbix_item: String(f.get("zi") ?? ""),
-          monitor_kind: f.get("monitor_kind") === "padtec_loss" ? "padtec_loss" : String(f.get("zi") ?? "").includes(",") ? "interface_group" : "interface",
+          monitor_kind: f.get("monitor_kind") === "padtec_loss" ? "padtec_loss" : edit?.monitor_kind === "padtec_spvl" && String(f.get("zi") ?? "") === edit.zabbix_item ? "padtec_spvl" : String(f.get("zi") ?? "").includes(",") ? "interface_group" : "interface",
           optical_down_value: f.get("optical_down_value") === "1" ? "1" : f.get("optical_down_value") === "0" ? "0" : "",
         },
       }),
