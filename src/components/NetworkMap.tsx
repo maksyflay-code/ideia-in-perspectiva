@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { searchPops } from "@/lib/pop-search";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import type { Network } from "@/lib/network.types";
@@ -350,7 +351,42 @@ export default function NetworkMap({
         </div>
       </div>
     );
-  return <div ref={el} className="h-full w-full" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={el} className="h-full w-full" />
+      <MapSearch pops={network.pops} onPick={(pop) => map.current?.flyTo({ center: [pop.lng, pop.lat], zoom: 12, duration: 900 })} />
+    </div>
+  );
+}
+
+function MapSearch({ pops, onPick }: { pops: Network["pops"]; onPick: (p: Network["pops"][number]) => void }) {
+  const [q, setQ] = useState("");
+  const [open, setOpen] = useState(false);
+  const results = searchPops(pops, q);
+  const pick = (p: Network["pops"][number]) => { onPick(p); setQ(p.city || p.name); setOpen(false); };
+  return (
+    <div className="absolute left-1/2 top-3 z-10 w-72 max-w-[calc(100%-6rem)] -translate-x-1/2">
+      <input
+        type="search" aria-label="Buscar cidade ou equipamento" placeholder="Buscar cidade ou equipamento"
+        value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={(e) => { if (e.key === "Enter" && results[0]) pick(results[0]); if (e.key === "Escape") setOpen(false); }}
+        className="w-full rounded-md border border-border bg-card/95 px-3 py-2 text-sm text-foreground shadow-lg outline-hidden placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+      />
+      {open && q.trim() && (
+        <ul className="mt-1 max-h-72 overflow-auto rounded-md border border-border bg-card/95 text-sm shadow-lg">
+          {results.length ? results.map((p) => (
+            <li key={p.id}>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => pick(p)} className="block w-full px-3 py-2 text-left hover:bg-muted">
+                <span className="text-foreground">{p.city || p.name}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{p.name}</span>
+              </button>
+            </li>
+          )) : <li className="px-3 py-2 text-muted-foreground">Nenhum ponto encontrado</li>}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 function fit(m: maplibregl.Map, net: Network, channelId: number | null) {
