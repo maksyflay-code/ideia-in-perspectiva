@@ -41,7 +41,7 @@ use the editor.
 - Update live map sources whenever they exist, without gating on isStyleLoaded(); pending tile loads must not discard Zabbix status updates.
 - Identify DWDM endpoints by padtec-/eci-/dci-datacom- names (Datacom on DWDM map avoids duplicate lines) and show their links with green lines and moving canvas lightning symbols; both maps use the same link width, decoration never establishes capacity or status, monitored unknown/down stop bolts, confirmed failure stays topmost red, and reduced motion hides bolts.
 - Render equipment markers with native MapLibre circle layers using status tokens; this preserves live colors, grouping and popup hit targets without image downloads.
-- Keep brand assets locally served for Docker deployments and isolate map popup tokens from the panel theme; branding must not introduce a hosted asset dependency or change operational map visuals.
+- Brand assets are served locally; map popup tokens stay isolated from the panel theme.
 - DWDM markers use separate online/down color tokens from switches while preserving Zabbix states and neutral unknown styling, so equipment types remain distinguishable without implying a new monitoring rule.
 - Marker labels stay short: switches drop the `sw-` prefix and show only the site name, DWDM markers keep the brand on its own line; popups always show the full technical name so Zabbix matching and identification are unaffected.
 - DWDM bulk imports query all current items on the VM through admin-only functions and use a browser-safe discovery helper; require explicit destination/physical-segment confirmation, retain unresolved OSC/Line references, and never infer Padtec polarity or OSC traffic status because circuit names do not prove adjacency.
@@ -50,6 +50,6 @@ use the editor.
 - Confirmed ECI branches use dedicated admin actions with live OSC validation and transactional undirected deduplication, preserving the ring and existing monitoring so a spur never rewires unrelated segments.
 - Padtec ring segments come from a browser-safe fixed planner of admin-supplied OSC dashboard segments; import is admin-only, all-or-nothing when a site is missing/ambiguous, deduplicates undirected pairs, and creates links unmonitored.
 - Single-switch imports are explicit admin actions in dynamically loaded SQLite services; preserve existing POPs and leave unknown/operator endpoints in notes instead of inventing links, because a port label alone does not identify a map endpoint.
-- Alarm-to-segment advice is a browser-safe pure lookup over registered POPs/links, never an external AI call.
+- Alarm-to-segment advice is a local pure lookup, never an external AI call.
 - Padtec spans without Line Loss may use padtec_spvl (SPVL SFP-down item IDs, 1=alarm).
 - Parks replaced by Padtec; no Admin Parks import.
