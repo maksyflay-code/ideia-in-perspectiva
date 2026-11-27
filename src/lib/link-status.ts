@@ -49,7 +49,7 @@ export function linkVisualState(link: Link, z?: {
   return z.byLink?.[String(link.id)]?.state ?? "unknown";
 }
 /** Padtec SPVL (supervisory/OSC) "SFP down alarm": 0 = no alarm, 1 = alarm. Any fresh alarm fails the span. */
-export const spvlSfpDownKey = /^cardPart\d+_.*sfp.*down.*\[\d+\]$/i;
+export const spvlSfpDownKey = /^cardPart\d+_alarmDownSFP\d\.\[\d+\]$/i;
 export function spvlStatus(items: (InterfaceItem | undefined)[], now = Date.now()): LinkStatus {
   if (!items.length) return { state: "unknown", message: "Nenhum alarme de supervisão cadastrado" };
   let unknown = false;
